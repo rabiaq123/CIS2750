@@ -32,15 +32,15 @@ $(BIN)LinkedListAPI.o: $(SRC)LinkedListAPI.c $(INC)LinkedListAPI.h
 	$(CC) $(CFLAGS) -c -fpic -I$(INC) $(SRC)LinkedListAPI.c -o $(BIN)LinkedListAPI.o
 
 #Added target for main tester file
-main: $(BIN)main.o $(BIN)GPXParser.o $(BIN)liblist.so $(BIN)libgpxparser.so
-	$(CC) $(CFLAGS) -I$(XML_PATH) $(LDFLAGS) -L$(BIN) -o $(BIN)main $(BIN)main.o $(BIN)GPXParser.o -lxml2 -lm -llist
+mainTester: $(BIN)mainTester.o $(BIN)GPXParser.o $(BIN)liblist.so $(BIN)libgpxparser.so
+	$(CC) $(CFLAGS) -I$(XML_PATH) $(LDFLAGS) -L$(BIN) -o $(BIN)mainTester $(BIN)mainTester.o $(BIN)GPXParser.o -lxml2 -lm -llist
 	
-$(BIN)main.o: $(SRC)main.c $(SRC)GPXParser.c
-	$(CC) $(CFLAGS) -I$(XML_PATH) -I$(INC) -c $(SRC)main.c -o $(BIN)main.o
+$(BIN)mainTester.o: $(SRC)mainTester.c $(SRC)GPXParser.c
+	$(CC) $(CFLAGS) -I$(XML_PATH) -I$(INC) -c $(SRC)mainTester.c -o $(BIN)mainTester.o
 
 #Added component for main
 clean:
-	rm -rf $(BIN)StructListDemo $(BIN)xmlExample $(BIN)main $(BIN)*.o $(BIN)*.so
+	rm -rf $(BIN)StructListDemo $(BIN)xmlExample $(BIN)mainTester $(BIN)*.o $(BIN)*.so
 
 #This is the target for the in-class XML example
 xmlExample: $(SRC)libXmlExample.c
