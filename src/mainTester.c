@@ -8,15 +8,19 @@
 #include "GPXHelpers.h"
 
 int main() {
-    int isParsed = 0; //if error in parsing XML, set to 1
+    //printf("in main()\n");
+    GPXdoc* createdGPXobj = NULL;
     char filename[] = "/home/undergrad/0/rqureshi/Desktop/W21/CIS2750/ListExample/Reyn-Rozh_parking.gpx";
 
-    //attempt to parse XML file
-    isParsed = parseXMLfile(filename);
 
-    if (isParsed == 1) { //error-checking
+    //attempt to parse XML file
+    createdGPXobj = createGPXdoc(filename);
+
+    if (createdGPXobj == NULL) { //error-checking
         printf("Error: could not parse file %s\n", filename);
     }
+
+    free(createdGPXobj);
 
     return 0;
 }
