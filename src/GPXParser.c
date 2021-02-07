@@ -44,16 +44,17 @@ GPXdoc* createGPXdoc(char* fileName) {
     if (file == NULL) { //return if not a well-formed XML
         return NULL;
     }
-    //get the root element node
+    //get the root element node 'gpx'
     rootElement = xmlDocGetRootElement(file);
 
     GPXdoc* myGPXdoc = (GPXdoc*)calloc(1, sizeof(GPXdoc)); //calloc() initializes memory allocated to 0
     if (!traverseGPXtree(rootElement, myGPXdoc)) { //error-checking for incorrectly-formatted GPX file
+        xmlFreeDoc(file);
+        deleteGPXdoc(myGPXdoc);
         return NULL;
     }
 
     xmlFreeDoc(file);
-    xmlCleanupParser(); //free the global variables that may have been allocated by the parser
 
     return myGPXdoc;
 }
@@ -61,6 +62,7 @@ GPXdoc* createGPXdoc(char* fileName) {
 
 bool traverseGPXtree(xmlNode* node, GPXdoc* myGPXdoc) {
     //printf("in traverseGPXtree()\n");
+
     xmlNode* curNode = NULL;
 
     for (curNode = node; curNode != NULL; curNode = curNode->next) {
@@ -74,8 +76,9 @@ bool traverseGPXtree(xmlNode* node, GPXdoc* myGPXdoc) {
                 }
             }
         }
-
-        traverseGPXtree(curNode->children, myGPXdoc);
+        if (!traverseGPXtree(curNode->children, myGPXdoc)) {
+            return false;
+        }
     }
 
     return true;
@@ -84,6 +87,7 @@ bool traverseGPXtree(xmlNode* node, GPXdoc* myGPXdoc) {
 
 bool storeGPXattributes(xmlNode* curNode, GPXdoc* myGPXdoc) {
     //printf("in storeGPXattributes()");
+
     xmlAttr* attr;
 
     //store the namespace
@@ -95,24 +99,25 @@ bool storeGPXattributes(xmlNode* curNode, GPXdoc* myGPXdoc) {
     for (attr = curNode->properties; attr != NULL; attr = attr->next) {
         xmlNode* value = attr->children; //value associated with attribute
 
-        if (strcmp((char*)attr->name, "version") == 0) {
-            if (!storeVersion(value, myGPXdoc)) {
+        if (strcmp((char*)attr->name, "version") == 0) { //store the version
+            if (!storeGPXversion(value, myGPXdoc)) {
                 return false;
             }
-        } else if (strcmp((char*)attr->name, "creator") == 0) {
-            if (!storeCreator(value, myGPXdoc)) {
+        } else if (strcmp((char*)attr->name, "creator") == 0) { //store the creator
+            if (!storeGPXcreator(value, myGPXdoc)) {
                 return false;
             }
         }
     }
-
+    
     return true;
 }
 
 
-bool storeCreator(xmlNode* value, GPXdoc* myGPXdoc) {
+bool storeGPXcreator(xmlNode* value, GPXdoc* myGPXdoc) {
     //printf("in storeCreator()");
-    char* buffer;
+    
+    char buffer[1000] = {'\0'};
     int len;
 
     //error-checking for incorrectly formatted creator value
@@ -120,57 +125,70 @@ bool storeCreator(xmlNode* value, GPXdoc* myGPXdoc) {
         return false;
     }
 
-    len = strlen((char*)value->content); //stren() excludes NULL terminator
-    buffer = (char*)calloc(len + 1, sizeof(char));
+//    len = strlen((char*)value->content); //strlen() excludes NULL terminator
+//    buffer = tempStoreInBuffer(value, len);
     strcpy(buffer, (char*)value->content);
-
-    if (buffer[0] == '\0' || strcmp(buffer, "") == 0) { //empty string
+    if (buffer == '\0' || strcmp(buffer, "") == 0) { //empty string
         return false;
     }
-    //printf("strlen of buffer in storeCreator: %d\n", len);
 
     //store in GPX struct
-    myGPXdoc->creator = (char *)calloc(len + 1, sizeof(char)); //allocate space for content of type char* in GPX struct
+    len = strlen(buffer); //strlen() excludes NULL terminator
+    myGPXdoc->creator = (char *)calloc(len + 1, sizeof(char));
     strcpy(myGPXdoc->creator, buffer);
+    //printf("creator attribute is: %s, with strlen: %d excluding NULL terminator\n", myGPXdoc->creator, len);
 
-    free(buffer);
+//   free(buffer);
 
     return true;
 }
 
 
-bool storeVersion(xmlNode* value, GPXdoc* myGPXdoc) {
+bool storeGPXversion(xmlNode* value, GPXdoc* myGPXdoc) {
     //printf("in storeVersion()");
+
     double versionNum;
     char* ptr;
-    char* buffer;
-    int len;
+    char buffer[100] = {'\0'};
+//    int len;
 
     //error-checking for incorrectly formatted version number
     if (value->content == NULL) {
         return false;
     }
 
-    len = strlen((char*)value->content); //stren() excludes NULL terminator
-    buffer = (char*)calloc(len + 1, sizeof(char));
+//    len = strlen((char*)value->content); //strlen() excludes NULL terminator
+//    buffer = tempStoreInBuffer(value, len);
     strcpy(buffer, (char*)value->content);
-
-    if (strcmp(buffer, "\0") == 0 || strcmp(buffer, "") == 0) { //empty string, GPX version uninitialized
+    if (buffer == '\0' || strcmp(buffer, "") == 0) { //empty string, GPX version uninitialized
         return false;
     }
 
     //store in GPX struct
     versionNum = strtod(buffer, &ptr); //convert char* to type double
     myGPXdoc->version = versionNum;
+    //printf("version is: %f\n", myGPXdoc->version);
 
-    free(buffer);
+//    free(buffer);
 
     return true;
 }
 
 
+/*
+char* tempStoreInBuffer(xmlNode* value, int len) {
+    char* buffer;
+    
+    buffer = (char*)calloc(len + 1, sizeof(char));
+    strcpy(buffer, (char*)value->content);
+
+    return buffer;
+}
+*/
+
 bool storeGPXnamespace(xmlNode* rootNode, GPXdoc* myGPXdoc) {
     //printf("in storeGPXnamespace()");
+
     char buffer[256] = {'\0'};
 
     //error-checking for incorrectly formatted namespace
@@ -184,6 +202,19 @@ bool storeGPXnamespace(xmlNode* rootNode, GPXdoc* myGPXdoc) {
 
     //store in GPX struct
     strcpy(myGPXdoc->namespace, buffer);
+//    printf("namespace is %s with strlen %d (excluding NULL terminator)\n", myGPXdoc->namespace, strlen(myGPXdoc->namespace));
 
     return true;
+}
+
+
+void deleteGPXdoc(GPXdoc* doc) {
+
+    if (doc != NULL) { //error-checking
+        free(doc->creator);
+        free(doc);
+        doc = NULL;
+    }
+
+    xmlCleanupParser();
 }

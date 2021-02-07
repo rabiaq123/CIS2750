@@ -41,7 +41,7 @@ bool storeGPXnamespace(xmlNode *rootNode, GPXdoc *myGPXdoc);
  * @param myGPXdoc pointer to GPX struct in which to store entire GPX file
  * @return boolean value representing whether valid 'version' number was found - halt traversal process if false
  */
-bool storeVersion(xmlNode *value, GPXdoc *myGPXdoc);
+bool storeGPXversion(xmlNode *value, GPXdoc *myGPXdoc);
 
 /**
  * store the content of the 'creator' attribute in GPX struct
@@ -49,4 +49,12 @@ bool storeVersion(xmlNode *value, GPXdoc *myGPXdoc);
  * @param myGPXdoc pointer to GPX struct in which to store entire GPX file
  * @return boolean value representing whether valid 'creator' value was found - halt traversal process if false
  */
-bool storeCreator(xmlNode* value, GPXdoc* myGPXdoc);
+bool storeGPXcreator(xmlNode* value, GPXdoc* myGPXdoc);
+
+/**
+ * temporarily store string content in buffer
+ * @param value current node
+ * @param len string length of content
+ * @return buffer containing content
+ */
+char *tempStoreInBuffer(xmlNode* value, int len);

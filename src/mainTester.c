@@ -10,17 +10,19 @@
 int main() {
     //printf("in main()\n");
     GPXdoc* createdGPXobj = NULL;
-    char filename[] = "/home/undergrad/0/rqureshi/Desktop/W21/CIS2750/ListExample/Reyn-Rozh_parking.gpx";
-
+    char file[] = "/home/undergrad/0/rqureshi/Desktop/W21/CIS2750/ListExample/Reyn-Rozh_parking.gpx";
+    // char file[] = "/home/undergrad/0/rqureshi/Desktop/W21/CIS2750/ListExample/simple.gpx";
+    // char file[] = "/home/undergrad/0/rqureshi/Desktop/W21/CIS2750/SampleGPXfiles/GHTC_James-Victoria(1rt_0trk_0seg_1960m).gpx";
 
     //attempt to parse XML file
-    createdGPXobj = createGPXdoc(filename);
+    createdGPXobj = createGPXdoc(file);
 
     if (createdGPXobj == NULL) { //error-checking
-        printf("Error: could not parse file %s\n", filename);
+        printf("Error: could not parse file %s\n", file);
     }
 
-    free(createdGPXobj);
+    deleteGPXdoc(createdGPXobj);
+    createdGPXobj = NULL;
 
     return 0;
 }
