@@ -50,11 +50,3 @@ bool storeGPXversion(xmlNode *value, GPXdoc *myGPXdoc);
  * @return boolean value representing whether valid 'creator' value was found - halt traversal process if false
  */
 bool storeGPXcreator(xmlNode* value, GPXdoc* myGPXdoc);
-
-/**
- * temporarily store string content in buffer
- * @param value current node
- * @param len string length of content
- * @return buffer containing content
- */
-char *tempStoreInBuffer(xmlNode* value, int len);

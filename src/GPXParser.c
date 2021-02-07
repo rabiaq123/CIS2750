@@ -125,20 +125,17 @@ bool storeGPXcreator(xmlNode* value, GPXdoc* myGPXdoc) {
         return false;
     }
 
-//    len = strlen((char*)value->content); //strlen() excludes NULL terminator
-//    buffer = tempStoreInBuffer(value, len);
     strcpy(buffer, (char*)value->content);
+    len = strlen(buffer); //strlen() excludes NULL terminator
+
     if (buffer == '\0' || strcmp(buffer, "") == 0) { //empty string
         return false;
     }
 
     //store in GPX struct
-    len = strlen(buffer); //strlen() excludes NULL terminator
     myGPXdoc->creator = (char *)calloc(len + 1, sizeof(char));
     strcpy(myGPXdoc->creator, buffer);
-    //printf("creator attribute is: %s, with strlen: %d excluding NULL terminator\n", myGPXdoc->creator, len);
-
-//   free(buffer);
+    //printf("creator attribute is: %s, with strlen: %d (excluding '\0')\n", myGPXdoc->creator, len);
 
     return true;
 }
@@ -150,15 +147,12 @@ bool storeGPXversion(xmlNode* value, GPXdoc* myGPXdoc) {
     double versionNum;
     char* ptr;
     char buffer[100] = {'\0'};
-//    int len;
 
     //error-checking for incorrectly formatted version number
     if (value->content == NULL) {
         return false;
     }
 
-//    len = strlen((char*)value->content); //strlen() excludes NULL terminator
-//    buffer = tempStoreInBuffer(value, len);
     strcpy(buffer, (char*)value->content);
     if (buffer == '\0' || strcmp(buffer, "") == 0) { //empty string, GPX version uninitialized
         return false;
@@ -169,22 +163,9 @@ bool storeGPXversion(xmlNode* value, GPXdoc* myGPXdoc) {
     myGPXdoc->version = versionNum;
     //printf("version is: %f\n", myGPXdoc->version);
 
-//    free(buffer);
-
     return true;
 }
 
-
-/*
-char* tempStoreInBuffer(xmlNode* value, int len) {
-    char* buffer;
-    
-    buffer = (char*)calloc(len + 1, sizeof(char));
-    strcpy(buffer, (char*)value->content);
-
-    return buffer;
-}
-*/
 
 bool storeGPXnamespace(xmlNode* rootNode, GPXdoc* myGPXdoc) {
     //printf("in storeGPXnamespace()");
@@ -202,7 +183,7 @@ bool storeGPXnamespace(xmlNode* rootNode, GPXdoc* myGPXdoc) {
 
     //store in GPX struct
     strcpy(myGPXdoc->namespace, buffer);
-//    printf("namespace is %s with strlen %d (excluding NULL terminator)\n", myGPXdoc->namespace, strlen(myGPXdoc->namespace));
+    //printf("namespace is %s, with strlen: %d (excluding '\0')\n", myGPXdoc->namespace, strlen(myGPXdoc->namespace));
 
     return true;
 }
