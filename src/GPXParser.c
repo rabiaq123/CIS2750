@@ -135,7 +135,7 @@ bool storeGPXcreator(xmlNode* value, GPXdoc* myGPXdoc) {
     //store in GPX struct
     myGPXdoc->creator = (char *)calloc(len + 1, sizeof(char));
     strcpy(myGPXdoc->creator, buffer);
-    //printf("creator attribute is: %s, with strlen: %d (excluding '\0')\n", myGPXdoc->creator, len);
+    //printf("CREATOR: %s, STRLEN: %d (excluding '\0')\n", myGPXdoc->creator, len);
 
     return true;
 }
@@ -161,7 +161,7 @@ bool storeGPXversion(xmlNode* value, GPXdoc* myGPXdoc) {
     //store in GPX struct
     versionNum = strtod(buffer, &ptr); //convert char* to type double
     myGPXdoc->version = versionNum;
-    //printf("version is: %f\n", myGPXdoc->version);
+    //printf("VERSION: %f\n", myGPXdoc->version);
 
     return true;
 }
@@ -183,13 +183,27 @@ bool storeGPXnamespace(xmlNode* rootNode, GPXdoc* myGPXdoc) {
 
     //store in GPX struct
     strcpy(myGPXdoc->namespace, buffer);
-    //printf("namespace is %s, with strlen: %d (excluding '\0')\n", myGPXdoc->namespace, strlen(myGPXdoc->namespace));
+    //printf("NAMESPACE: %s, STRLEN: %d (excluding '\0')\n", myGPXdoc->namespace, strlen(myGPXdoc->namespace));
 
     return true;
 }
 
 
-void deleteGPXdoc(GPXdoc* doc) {
+char* GPXdocToString(GPXdoc* doc) {
+    char* result = (char*)calloc(1000, sizeof(char));
+    int len;
+
+    //store 'gpx' attributes in output string
+    sprintf(result, "GPX doc to string is: \n*********************** \nNAMESPACE: %s \nVERSION: %.1f \nCREATOR: %s\n", 
+            doc->namespace, doc->version, doc->creator);
+
+    len = strlen(result); //strlen() excludes NULL terminator
+    result = realloc(result, len + 1);
+
+    return result;
+}
+
+void deleteGPXdoc(GPXdoc *doc) {
 
     if (doc != NULL) { //error-checking
         free(doc->creator);
