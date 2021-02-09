@@ -106,8 +106,12 @@ bool storeWpt(xmlNode* curNode, GPXdoc* myGPXdoc) {
     xmlAttr* attr;
     xmlNode* wptChild;
 
+    //calloc new waypoint
     newWpt = (Waypoint*)calloc(1, sizeof(Waypoint));
-    newWpt->name = (char*)calloc(300, sizeof(char)); //'name' in Waypoint struct must always be initialized
+    newWpt->name = (char*)calloc(300, sizeof(char)); //'name' in Waypoint struct must be initialized
+
+    //otherData list in Waypoint struct must be initialized
+    newWpt->otherData = initializeList(&gpxDataToString, &deleteGpxData, &compareGpxData);
 
     //store Waypoint attributes in Waypoint struct
     for (attr = curNode->properties; attr != NULL; attr = attr->next) {
@@ -127,16 +131,97 @@ bool storeWpt(xmlNode* curNode, GPXdoc* myGPXdoc) {
     //store content
     for (wptChild = curNode->children; wptChild != NULL; wptChild = wptChild->next) {
         if (wptChild->type == XML_ELEMENT_NODE) {
-
             if (strcmp((char*)wptChild->name, "name") == 0) {
                 storeWptName(wptChild, newWpt);
-            } 
+            } else {
+                storeWptOtherData(wptChild, newWpt); //Waypoint data other than attributes and name
+            }
         }
     }
 
     insertBack(myGPXdoc->waypoints, newWpt);
 
     return true;
+}
+
+
+void deleteGpxData(void* data) {
+    GPXData* tempOtherData;
+
+    if (data == NULL) {
+        return;
+    }
+
+    tempOtherData = (GPXData*)data;
+    
+    free(tempOtherData);
+}
+
+
+char* gpxDataToString(void* data) {
+    char* result = (char*)calloc(1000, sizeof(char));
+	GPXData* tempOtherData;
+	int len;
+	
+	if (data == NULL) {
+		return NULL;
+	}
+	
+	tempOtherData = (GPXData*)data;
+    sprintf(result, "OTHERDATA: \n-- NAME: %s \n-- VALUE: %s", 
+                    tempOtherData->name, tempOtherData->value);
+		
+	len = strlen(result); //strlen() excludes NULL terminator
+	result = realloc(result, len + 1);
+		
+	return result;
+}
+
+
+int compareGpxData(const void* first, const void* second) {
+    GPXData* tempOtherData1;
+	GPXData* tempOtherData2;
+	
+	if (first == NULL || second == NULL) { //error-checking
+		return 0;
+	}
+
+	tempOtherData1 = (GPXData*)first;
+	tempOtherData2 = (GPXData*)second;
+	
+	return strcmp((char*)tempOtherData1->name, (char*)tempOtherData2->name);
+}
+
+
+void storeWptOtherData(xmlNode* wptChild, Waypoint* newWpt) {
+    char nameBuffer[256] = {'\0'}, contentBuffer[300] = {'\0'};
+    GPXData* otherWptData;
+
+    //error-checking for incorrectly formatted Waypoint child node
+    if (wptChild->name == NULL) {
+        return;
+    }
+    if(wptChild->children->content == NULL) {
+        return;
+    }
+
+    //storing name of child node
+    strcpy(nameBuffer, (char*)wptChild->name);
+    if (nameBuffer == '\0' || strcmp(nameBuffer, "") == 0) { //empty string
+        return;
+    }
+
+    //storing content of child node
+    strcpy(contentBuffer, (char*)wptChild->children->content);
+    if (contentBuffer == '\0' || strcmp(contentBuffer, "") == 0) { //empty string
+        return;
+    }
+
+    otherWptData = (GPXData *)malloc(sizeof(GPXData) + 300 * sizeof(char)); //malloc for 50 chars in value[]
+    strcpy(otherWptData->name, nameBuffer);
+    strcpy(otherWptData->value, contentBuffer);
+
+    insertBack(newWpt->otherData, otherWptData);
 }
 
 
@@ -218,6 +303,7 @@ void deleteWaypoint(void* data) {
     tempWpt = (Waypoint*)data;
     
     free(tempWpt->name);
+    freeList(tempWpt->otherData);
     free(tempWpt);
 }
 
@@ -239,20 +325,29 @@ int compareWaypoints(const void* first, const void* second) {
 
 char* waypointToString(void* data) {
     char* result = (char*)calloc(1000, sizeof(char));
-	Waypoint* tempWpt;
+    Waypoint* tempWpt;
 	int len;
 	
 	if (data == NULL) {
 		return NULL;
 	}
 	
+    //name, lat, lon
 	tempWpt = (Waypoint*)data;
-    sprintf(result, "\nWaypoint: \n*********************** \nLAT: %f \nLON: %f", tempWpt->latitude, tempWpt->longitude);
+    sprintf(result, "\n*********************** \nWaypoint: \n***********************"
+                    "\nLAT: %f \nLON: %f",
+                    tempWpt->latitude, tempWpt->longitude);
     strcat(result, "\nNAME: ");
     strcat(result, tempWpt->name);
-		
-	len = strlen(result); //strlen() excludes NULL terminator
-	result = realloc(result, len + 1);
+    //other data
+    char* buffer = toString(tempWpt->otherData);
+    if (buffer != NULL) {
+        strcat(result, buffer);
+        free(buffer);
+    }
+
+    len = strlen(result); //strlen() excludes NULL terminator
+    result = realloc(result, len + 1);
 		
 	return result;
 }
@@ -355,20 +450,44 @@ char* GPXdocToString(GPXdoc* doc) {
     char* result = (char*)calloc(10000, sizeof(char));
     char* buffer = NULL;
     int len;
+    // ListIterator itrWpt, itrOtherData;
+    // void* tempWpt;
+    // void* tempOtherData;
 
-    //gpx (root node) attributes
-    sprintf(result, "GPX doc: \n*********************** \nNAMESPACE: %s \nVERSION: %f \nCREATOR: %s", 
+    //GPX (ROOT NODE) ATTRIBUTES
+    sprintf(result, "-------------------GPX DOC OBJECT TO STRING:-------------------\n"
+                    "*********************** \ngpx node: \n***********************"
+                    "\nNAMESPACE: %s \nVERSION: %f \nCREATOR: %s",
             doc->namespace, doc->version, doc->creator);
-    //waypoints
+
+    //WAYPOINTS
     buffer = toString(doc->waypoints);
     strcat(result, buffer);
     strcat(result, "\n");
+    free(buffer);
+
+    //other data (for waypoints)
+    // itrWpt = createIterator(doc->waypoints);
+    // while ((tempWpt = nextElement(&itrWpt)) != NULL) { //iterate Waypoints list
+    //     Waypoint* curWpt = (Waypoint*)tempWpt;
+    //     //iterate otherData list in each Waypoint struct
+    //     itrOtherData = createIterator(curWpt->otherData);
+    //     while((tempOtherData = nextElement(&itrOtherData)) != NULL) {
+    //         GPXData* curGPXData = (GPXData*)tempOtherData;
+    //         buffer = gpxDataToString(curGPXData);
+    //         strcat(result, buffer);
+    //         strcat(result, "\n");
+    //         if (buffer != NULL) {
+    //             free(buffer);
+    //         }
+    //     }
+    // }
+
+    strcat(result,"------------------END OF DOC OBJECT TO STRING------------------\n");
 
     len = strlen(result); //strlen() excludes NULL terminator
     result = realloc(result, len + 1);
     
-    free(buffer);
-
     return result;
 }
 
