@@ -10,7 +10,7 @@
 int main() {
     GPXdoc* createdGPXobj = NULL;
     char* GPXstring;
-    char file[] = "/home/undergrad/0/rqureshi/Desktop/W21/CIS2750/ListExample/Reyn-Rozh_parking.gpx";
+    char file[] = "/home/undergrad/0/rqureshi/Desktop/W21/CIS2750/ListExample/simple.gpx";
 
     //attempt to parse XML file
     createdGPXobj = createGPXdoc(file);
