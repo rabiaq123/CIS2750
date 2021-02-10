@@ -227,23 +227,30 @@ void storeWptOtherData(xmlNode* wptChild, Waypoint* newWpt) {
 
 void storeWptName(xmlNode* wptChild, Waypoint* newWpt) {
     char buffer[300] = {'\0'};
+    bool isEmpty = false;
     int len;
 
-    //error-checking for incorrectly formatted Waypoint name
-    if(wptChild->children->content == NULL) {
-        return;
+    if (wptChild->children == NULL) { //name in Waypoint struct must be initialized
+        isEmpty = true;
+    } else {
+        if ((xmlChar)wptChild->children->content[0] == '\0' || (xmlChar)wptChild->children->content[0] == '\n') {
+            isEmpty = true;
+        }
     }
 
-    strcpy(buffer, (char*)wptChild->children->content);
-    len = strlen(buffer); //strlen() excludes NULL terminator
-
-    if (buffer == '\0' || strcmp(buffer, "") == 0) { //empty string
-        return;
+    //store name content in Waypoint struct
+    if (!isEmpty) {
+        strcpy(buffer, (char *)wptChild->children->content);
+        len = strlen(buffer); //strlen() excludes NULL terminator
+        strcpy(newWpt->name, buffer);
+    } else {
+        len = 0;
+        strcpy(newWpt->name, "");
     }
 
-    //store in Waypoint struct
-    strcpy(newWpt->name, buffer);
     newWpt->name = realloc(newWpt->name, len + 1);
+
+    return;
 }
 
 
