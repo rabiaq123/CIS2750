@@ -78,7 +78,6 @@ bool traverseGPXtree(xmlNode* node, GPXdoc* myGPXdoc) {
                 }
             } else if (strcmp((char*)curNode->name, "wpt") == 0) {
                 if (!storeWpt(curNode, myGPXdoc)) { //store one wpt
-//                    printf("error occurred\n");
                     return false;
                 }
             } /*else if (strcmp((char*)curNode->name, "trk") == 0) {
@@ -104,15 +103,13 @@ bool traverseGPXtree(xmlNode* node, GPXdoc* myGPXdoc) {
 
 bool storeWpt(xmlNode* curNode, GPXdoc* myGPXdoc) {
     Waypoint* newWpt;
-    xmlNode* wptChild;
     xmlAttr* attr;
     int numAttr = 0;
 
-    //calloc new waypoint
     newWpt = (Waypoint*)calloc(1, sizeof(Waypoint));
-    newWpt->name = (char*)calloc(300, sizeof(char)); //'name' in Waypoint struct must be initialized
 
-    //'otherData' list in Waypoint struct must be initialized
+    //must not be NULL, but may be empty
+    newWpt->name = (char*)calloc(300, sizeof(char));
     newWpt->otherData = initializeList(&gpxDataToString, &deleteGpxData, &compareGpxData);
 
     //store Waypoint attributes in Waypoint struct
@@ -130,13 +127,16 @@ bool storeWpt(xmlNode* curNode, GPXdoc* myGPXdoc) {
         }
     }
 
-    //store content
-    for (wptChild = curNode->children; wptChild != NULL; wptChild = wptChild->next) {
-        if (wptChild->type == XML_ELEMENT_NODE) {
-            if (strcmp((char*)wptChild->name, "name") == 0) {
-                storeWptName(wptChild, newWpt);
+    //store content other than attributes: waypoint name and other data
+    for (xmlNode* xmlWptChild = curNode->children; xmlWptChild != NULL; xmlWptChild = xmlWptChild->next) {
+        if (xmlWptChild->type == XML_ELEMENT_NODE) {
+            if (strcmp((char*)xmlWptChild->name, "name") == 0) {
+                storeWptName(xmlWptChild, newWpt);
             } else {
-                storeWptOtherData(wptChild, newWpt); //waypoint data other than attributes and name
+                if (!storeWptOtherData(xmlWptChild, newWpt)) { //content name and value must not be empty strings
+                    deleteWaypoint(newWpt);
+                    return false;
+                }
             }
         }
     }
@@ -168,54 +168,78 @@ bool storeWptAttributes(xmlAttr* attr, Waypoint* newWpt) {
 }
 
 
-void storeWptOtherData(xmlNode* wptChild, Waypoint* newWpt) {
+bool storeWptOtherData(xmlNode* xmlWptChild, Waypoint* newWpt) {
     char nameBuffer[256] = {'\0'}, contentBuffer[300] = {'\0'};
     GPXData* otherWptData;
+    int len = 0;
+
+    //GPXData's name must not be an empty string (if other children exist in 'wpt')
+    if ((xmlChar)xmlWptChild->name[0] == '\0' || (xmlChar)xmlWptChild->name[0] == '\n') {
+        return false;
+    }
+
+    //GPXData's content must not be an empty string (if other children exist in 'wpt')
+    if (xmlWptChild->children == NULL) {
+        return false;
+    } else {
+        if ((xmlChar)xmlWptChild->children->content[0] == '\0' || (xmlChar)xmlWptChild->children->content[0] == '\n') {
+            return false;
+        }
+    }
+
+    //store other data's name and content in GPXData struct
+    strcpy(nameBuffer, (char*)xmlWptChild->name);
+    strcpy(contentBuffer, (char *)xmlWptChild->children->content);
+    len = strlen(contentBuffer); //strlen() excludes NULL terminator
+
+
 
     //error-checking for incorrectly formatted Waypoint child node
-    if (wptChild->name == NULL) {
-        return;
-    }
-    if(wptChild->children->content == NULL) {
-        return;
-    }
+    // if (xmlWptChild->name == NULL) {
+    //     return;
+    // }
+    // if(xmlWptChild->children->content == NULL) {
+    //     return;
+    // }
 
-    //storing name of child node
-    strcpy(nameBuffer, (char*)wptChild->name);
-    if (nameBuffer == '\0' || strcmp(nameBuffer, "") == 0) { //empty string
-        return;
-    }
+    // //storing name of child node
+    // strcpy(nameBuffer, (char*)xmlWptChild->name);
+    // if (nameBuffer == '\0' || strcmp(nameBuffer, "") == 0) { //empty string
+    //     return;
+    // }
 
-    //storing content of child node
-    strcpy(contentBuffer, (char*)wptChild->children->content);
-    if (contentBuffer == '\0' || strcmp(contentBuffer, "") == 0) { //empty string
-        return;
-    }
+    // //storing content of child node
+    // strcpy(contentBuffer, (char*)xmlWptChild->children->content);
+    // if (contentBuffer == '\0' || strcmp(contentBuffer, "") == 0) { //empty string
+    //     return;
+    // }
 
-    otherWptData = (GPXData *)malloc(sizeof(GPXData) + 300 * sizeof(char)); //malloc for 50 chars in value[]
+    otherWptData = (GPXData*)malloc(sizeof(GPXData) + (len + 1) * sizeof(char)); //malloc for len+1 chars in value[]
     strcpy(otherWptData->name, nameBuffer);
     strcpy(otherWptData->value, contentBuffer);
 
     insertBack(newWpt->otherData, otherWptData);
+
+    return true;
 }
 
 
-void storeWptName(xmlNode* wptChild, Waypoint* newWpt) {
+void storeWptName(xmlNode* xmlWptChild, Waypoint* newWpt) {
     char buffer[300] = {'\0'};
     bool isEmpty = false;
     int len = 0;
 
-    if (wptChild->children == NULL) { //name in Waypoint struct must be initialized
+    if (xmlWptChild->children == NULL) { //name in Waypoint struct must not be NULL
         isEmpty = true;
     } else {
-        if ((xmlChar)wptChild->children->content[0] == '\0' || (xmlChar)wptChild->children->content[0] == '\n') {
+        if ((xmlChar)xmlWptChild->children->content[0] == '\0' || (xmlChar)xmlWptChild->children->content[0] == '\n') {
             isEmpty = true;
         }
     }
 
-    //store name content in Waypoint struct
+    //store 'name' content in Waypoint struct
     if (!isEmpty) {
-        strcpy(buffer, (char *)wptChild->children->content);
+        strcpy(buffer, (char *)xmlWptChild->children->content);
         len = strlen(buffer); //strlen() excludes NULL terminator
         strcpy(newWpt->name, buffer);
     } else {

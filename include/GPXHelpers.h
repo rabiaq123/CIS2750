@@ -93,8 +93,9 @@ void storeWptName(xmlNode *curNode, Waypoint *newWpt);
  * HELPER store Waypoint's other data in current Waypoint struct
  * @param wptChild current 'wpt' child node to parse into GPXData struct for otherData list in newWpt
  * @param newWpt pointer to Waypoint struct to store other wpt data in
+ * @return boolean value representing whether Waypoint's other data was formatted properly in XML file - halt traversal if false
  */
-void storeWptOtherData(xmlNode* wptChild, Waypoint* newWpt);
+bool storeWptOtherData(xmlNode* wptChild, Waypoint* newWpt);
 
 /**
  * HELPER store Waypoint's attributes in current Waypoint struct
