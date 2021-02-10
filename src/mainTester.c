@@ -17,6 +17,7 @@ int main() {
 
     if (createdGPXobj == NULL) { //error-checking
         printf("Error: could not parse file %s\n", file);
+        return 0;
     }
 
     GPXstring = GPXdocToString(createdGPXobj);

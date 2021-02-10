@@ -78,6 +78,7 @@ bool traverseGPXtree(xmlNode* node, GPXdoc* myGPXdoc) {
                 }
             } else if (strcmp((char*)curNode->name, "wpt") == 0) {
                 if (!storeWpt(curNode, myGPXdoc)) { //store one wpt
+//                    printf("error occurred\n");
                     return false;
                 }
             } /*else if (strcmp((char*)curNode->name, "trk") == 0) {
@@ -103,28 +104,29 @@ bool traverseGPXtree(xmlNode* node, GPXdoc* myGPXdoc) {
 
 bool storeWpt(xmlNode* curNode, GPXdoc* myGPXdoc) {
     Waypoint* newWpt;
-    xmlAttr* attr;
     xmlNode* wptChild;
+    xmlAttr* attr;
+    int numAttr = 0;
 
     //calloc new waypoint
     newWpt = (Waypoint*)calloc(1, sizeof(Waypoint));
     newWpt->name = (char*)calloc(300, sizeof(char)); //'name' in Waypoint struct must be initialized
 
-    //otherData list in Waypoint struct must be initialized
+    //'otherData' list in Waypoint struct must be initialized
     newWpt->otherData = initializeList(&gpxDataToString, &deleteGpxData, &compareGpxData);
 
     //store Waypoint attributes in Waypoint struct
+    for (attr = curNode->properties; attr != NULL; attr = attr->next) { //must have 2 Waypoint attributes
+        numAttr++;
+    }
+    if (attr == NULL && numAttr != 2) { //Waypoint must have 2 attributes
+        deleteWaypoint(newWpt);
+        return false;
+    }
     for (attr = curNode->properties; attr != NULL; attr = attr->next) {
-        xmlNode* value = attr->children; //value associated with attribute
-
-        if (strcmp((char*)attr->name, "lon") == 0) { //store the longitude
-            if (!storeWptLongitude(value, newWpt)) {
-                return false;
-            }
-        } else if (strcmp((char*)attr->name, "lat") == 0) { //store the latitude
-            if (!storeWptLatitude(value, newWpt)) {
-                return false;
-            }
+        if (!storeWptAttributes(attr, newWpt)) { //latitude and longitude must be initialized
+            deleteWaypoint(newWpt);
+            return false;
         }
     }
 
@@ -134,7 +136,7 @@ bool storeWpt(xmlNode* curNode, GPXdoc* myGPXdoc) {
             if (strcmp((char*)wptChild->name, "name") == 0) {
                 storeWptName(wptChild, newWpt);
             } else {
-                storeWptOtherData(wptChild, newWpt); //Waypoint data other than attributes and name
+                storeWptOtherData(wptChild, newWpt); //waypoint data other than attributes and name
             }
         }
     }
@@ -145,51 +147,24 @@ bool storeWpt(xmlNode* curNode, GPXdoc* myGPXdoc) {
 }
 
 
-void deleteGpxData(void* data) {
-    GPXData* tempOtherData;
-
-    if (data == NULL) {
-        return;
+bool storeWptAttributes(xmlAttr* attr, Waypoint* newWpt) {
+    if (strcmp((char*)attr->name, "lon") != 0 && strcmp((char*)attr->name, "lat") != 0) { //can only be 'lat' or 'lon'
+        return false;
     }
 
-    tempOtherData = (GPXData*)data;
-    
-    free(tempOtherData);
-}
+    //latitude and longitude must be initialized
+    if (strcmp((char*)attr->name, "lon") == 0) {
+        if (!storeWptLongitude(attr->children, newWpt)) { //store the the longitude
+            return false;
+        }
+    }
+    if (strcmp((char*)attr->name, "lat") == 0) {
+        if (!storeWptLatitude(attr->children, newWpt)) { //store the latitude
+            return false;
+        }
+    }
 
-
-char* gpxDataToString(void* data) {
-    char* result = (char*)calloc(1000, sizeof(char));
-	GPXData* tempOtherData;
-	int len;
-	
-	if (data == NULL) {
-		return NULL;
-	}
-	
-	tempOtherData = (GPXData*)data;
-    sprintf(result, "OTHERDATA: \n-- NAME: %s \n-- VALUE: %s", 
-                    tempOtherData->name, tempOtherData->value);
-		
-	len = strlen(result); //strlen() excludes NULL terminator
-	result = realloc(result, len + 1);
-		
-	return result;
-}
-
-
-int compareGpxData(const void* first, const void* second) {
-    GPXData* tempOtherData1;
-	GPXData* tempOtherData2;
-	
-	if (first == NULL || second == NULL) { //error-checking
-		return 0;
-	}
-
-	tempOtherData1 = (GPXData*)first;
-	tempOtherData2 = (GPXData*)second;
-	
-	return strcmp((char*)tempOtherData1->name, (char*)tempOtherData2->name);
+    return true;
 }
 
 
@@ -228,7 +203,7 @@ void storeWptOtherData(xmlNode* wptChild, Waypoint* newWpt) {
 void storeWptName(xmlNode* wptChild, Waypoint* newWpt) {
     char buffer[300] = {'\0'};
     bool isEmpty = false;
-    int len;
+    int len = 0;
 
     if (wptChild->children == NULL) { //name in Waypoint struct must be initialized
         isEmpty = true;
@@ -244,7 +219,6 @@ void storeWptName(xmlNode* wptChild, Waypoint* newWpt) {
         len = strlen(buffer); //strlen() excludes NULL terminator
         strcpy(newWpt->name, buffer);
     } else {
-        len = 0;
         strcpy(newWpt->name, "");
     }
 
@@ -265,7 +239,7 @@ bool storeWptLatitude(xmlNode* value, Waypoint* newWpt) {
     }
 
     strcpy(buffer, (char*)value->content);
-    if (buffer == '\0' || strcmp(buffer, "") == 0) { //empty string
+    if (buffer == '\0' || strcmp(buffer, "") == 0) { //latitude must be initialized
         return false;
     }
 
@@ -288,7 +262,7 @@ bool storeWptLongitude(xmlNode* value, Waypoint* newWpt) {
     }
 
     strcpy(buffer, (char*)value->content);
-    if (buffer == '\0' || strcmp(buffer, "") == 0) { //empty string
+    if (buffer == '\0' || strcmp(buffer, "") == 0) { //longitude must be initialized
         return false;
     }
 
@@ -297,66 +271,6 @@ bool storeWptLongitude(xmlNode* value, Waypoint* newWpt) {
     newWpt->longitude = lon;
 
     return true;
-}
-
-
-void deleteWaypoint(void* data) {
-    Waypoint* tempWpt;
-
-    if (data == NULL) {
-        return;
-    }
-
-    tempWpt = (Waypoint*)data;
-    
-    free(tempWpt->name);
-    freeList(tempWpt->otherData);
-    free(tempWpt);
-}
-
-
-int compareWaypoints(const void* first, const void* second) {
-    Waypoint* tempWpt1;
-	Waypoint* tempWpt2;
-	
-	if (first == NULL || second == NULL) { //error-checking
-		return 0;
-	}
-	
-	tempWpt1 = (Waypoint*)first;
-	tempWpt2 = (Waypoint*)second;
-	
-	return strcmp((char*)tempWpt1->name, (char*)tempWpt2->name);
-}
-
-
-char* waypointToString(void* data) {
-    char* result = (char*)calloc(1000, sizeof(char));
-    Waypoint* tempWpt;
-	int len;
-	
-	if (data == NULL) {
-		return NULL;
-	}
-	
-    //name, lat, lon
-	tempWpt = (Waypoint*)data;
-    sprintf(result, "\n*********************** \nWaypoint: \n***********************"
-                    "\nLAT: %f \nLON: %f",
-                    tempWpt->latitude, tempWpt->longitude);
-    strcat(result, "\nNAME: ");
-    strcat(result, tempWpt->name);
-    //other data
-    char* buffer = toString(tempWpt->otherData);
-    if (buffer != NULL) {
-        strcat(result, buffer);
-        free(buffer);
-    }
-
-    len = strlen(result); //strlen() excludes NULL terminator
-    result = realloc(result, len + 1);
-		
-	return result;
 }
 
 
@@ -453,6 +367,114 @@ bool storeGpxNamespace(xmlNode* rootNode, GPXdoc* myGPXdoc) {
 }
 
 
+void deleteWaypoint(void* data) {
+    Waypoint* tempWpt;
+
+    if (data == NULL) {
+        return;
+    }
+
+    tempWpt = (Waypoint*)data;
+    
+    free(tempWpt->name);
+    freeList(tempWpt->otherData);
+    free(tempWpt);
+}
+
+
+int compareWaypoints(const void* first, const void* second) {
+    Waypoint* tempWpt1;
+	Waypoint* tempWpt2;
+	
+	if (first == NULL || second == NULL) { //error-checking
+		return 0;
+	}
+	
+	tempWpt1 = (Waypoint*)first;
+	tempWpt2 = (Waypoint*)second;
+	
+	return strcmp((char*)tempWpt1->name, (char*)tempWpt2->name);
+}
+
+
+char* waypointToString(void* data) {
+    char* result = (char*)calloc(1000, sizeof(char));
+    Waypoint* tempWpt;
+	int len;
+	
+	if (data == NULL) {
+		return NULL;
+	}
+	
+    //name, lat, lon
+	tempWpt = (Waypoint*)data;
+    sprintf(result, "\n*********************** \nWaypoint: \n***********************"
+                    "\nLAT: %f \nLON: %f",
+                    tempWpt->latitude, tempWpt->longitude);
+    strcat(result, "\nNAME: ");
+    strcat(result, tempWpt->name);
+    //other data
+    char* buffer = toString(tempWpt->otherData);
+    if (buffer != NULL) {
+        strcat(result, buffer);
+        free(buffer);
+    }
+
+    len = strlen(result); //strlen() excludes NULL terminator
+    result = realloc(result, len + 1);
+		
+	return result;
+}
+
+
+void deleteGpxData(void* data) {
+    GPXData* tempOtherData;
+
+    if (data == NULL) {
+        return;
+    }
+
+    tempOtherData = (GPXData*)data;
+    
+    free(tempOtherData);
+}
+
+
+char* gpxDataToString(void* data) {
+    char* result = (char*)calloc(1000, sizeof(char));
+	GPXData* tempOtherData;
+	int len;
+	
+	if (data == NULL) {
+		return NULL;
+	}
+	
+	tempOtherData = (GPXData*)data;
+    sprintf(result, "OTHERDATA: \n-- NAME: %s \n-- VALUE: %s", 
+                    tempOtherData->name, tempOtherData->value);
+		
+	len = strlen(result); //strlen() excludes NULL terminator
+	result = realloc(result, len + 1);
+		
+	return result;
+}
+
+
+int compareGpxData(const void* first, const void* second) {
+    GPXData* tempOtherData1;
+	GPXData* tempOtherData2;
+	
+	if (first == NULL || second == NULL) { //error-checking
+		return 0;
+	}
+
+	tempOtherData1 = (GPXData*)first;
+	tempOtherData2 = (GPXData*)second;
+	
+	return strcmp((char*)tempOtherData1->name, (char*)tempOtherData2->name);
+}
+
+
 char* GPXdocToString(GPXdoc* doc) {
     char* result = (char*)calloc(10000, sizeof(char));
     char* buffer = NULL;
@@ -462,7 +484,7 @@ char* GPXdocToString(GPXdoc* doc) {
     // void* tempOtherData;
 
     //GPX (ROOT NODE) ATTRIBUTES
-    sprintf(result, "-------------------GPX DOC OBJECT TO STRING:-------------------\n"
+    sprintf(result, "\n-------------------GPX DOC OBJECT TO STRING:-------------------\n"
                     "*********************** \ngpx node: \n***********************"
                     "\nNAMESPACE: %s \nVERSION: %f \nCREATOR: %s",
             doc->namespace, doc->version, doc->creator);

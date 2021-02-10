@@ -83,15 +83,23 @@ bool storeWptLongitude(xmlNode *curNode, Waypoint *newWpt);
 bool storeWptLatitude(xmlNode *curNode, Waypoint *newWpt);
 
 /**
- * HELPER store Waypoint name to current Waypoint struct
+ * HELPER store Waypoint name in current Waypoint struct
  * @param curNode current 'wpt' child node from which one Waypoint's information is being parsed
  * @param newWpt pointer to Waypoint struct to store name in
  */
 void storeWptName(xmlNode *curNode, Waypoint *newWpt);
 
 /**
- * HELPER store Waypoint's other data to current Waypoint struct
+ * HELPER store Waypoint's other data in current Waypoint struct
  * @param wptChild current 'wpt' child node to parse into GPXData struct for otherData list in newWpt
  * @param newWpt pointer to Waypoint struct to store other wpt data in
  */
 void storeWptOtherData(xmlNode* wptChild, Waypoint* newWpt);
+
+/**
+ * HELPER store Waypoint's attributes in current Waypoint struct
+ * @param attr current Waypoint attribute to parse into Waypoint struct. 
+ * attr->children is the value associated with the attribute
+ * @param newWpt pointer to Waypoint struct to store attribute in
+ */
+bool storeWptAttributes(xmlAttr* attr, Waypoint* newWpt);
