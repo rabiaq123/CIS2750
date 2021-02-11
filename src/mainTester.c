@@ -8,24 +8,29 @@
 #include "GPXHelpers.h"
 
 int main() {
-    GPXdoc* createdGPXobj = NULL;
+    GPXdoc* doc = NULL;
     char* GPXstring;
-    char file[] = "/home/undergrad/0/rqureshi/Desktop/W21/CIS2750/ListExample/simple.gpx";
+    char file[] = "/home/undergrad/0/rqureshi/Desktop/W21/CIS2750/SampleGPXfiles/simple.gpx";
 
     //attempt to parse XML file
-    createdGPXobj = createGPXdoc(file);
+    doc = createGPXdoc(file);
 
-    if (createdGPXobj == NULL) { //error-checking
+    if (doc == NULL) { //error-checking
         printf("Error: could not parse file %s\n", file);
         return 0;
     }
-
-    GPXstring = GPXdocToString(createdGPXobj);
-    printf(GPXstring);
     
+    GPXstring = GPXdocToString(doc);
+    /*
+    printf(GPXstring);
+    printf("file is: %s\n", file);
+    printf("getNumWaypoints: %d, \ngetNumRoutes: %d, \ngetNumTracks: %d, \ngetNumSegments: %d, \ngetNumGPXData: %d\n",
+            getNumWaypoints(doc), getNumRoutes(doc), getNumTracks(doc), getNumSegments(doc), getNumGPXData(doc));
+    */
+
     free(GPXstring);
-    deleteGPXdoc(createdGPXobj);
-    createdGPXobj = NULL;
+    deleteGPXdoc(doc);
+    doc = NULL;
 
     return 0;
 }

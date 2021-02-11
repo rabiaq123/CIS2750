@@ -15,7 +15,7 @@
 
 /**
  * Note that as allowed by Professor Nikitenko,
- * certain functions, specifically parseXMLfiles() and printElementNames(),
+ * certain functions, specifically traverseGPXtree() and storeTrk(),
  * contain sample code from the libXmlExample.c file provided in class,
  * which is based on the LibXML example from:
  * http://www.xmlsoft.org/examples/tree1.c
@@ -173,7 +173,10 @@ bool storeTrkSeg(xmlNode* xmlTrkChild, Track* newTrk) {
     //must not be NULL, may be empty
     newTrkSeg->waypoints = initializeList(&waypointToString, &deleteWaypoint, &compareWaypoints);
 
-    if (xmlTrkChild->children->children != NULL) { //if children exist for 'trkseg' element
+    if (xmlTrkChild->children != NULL) { //if children exist for 'trkseg' element
+        //printf("check\n");
+        //strcpy(elemName, (char*)xmlTrkChild->children->next->name);
+        //printf("elem name: %s\n and content: %s\n", elemName, (char*)xmlTrkChild->children->next->content);
         strcpy(elemName, (char*)xmlTrkChild->children->name);
         if (strcmp(elemName, "trkpt") == 0)  {
             if (!storeWpt(xmlTrkChild, NULL, NULL, newTrkSeg)) { //store 'trkpt' in waypoints list of TrackSegment struct
@@ -337,11 +340,14 @@ bool storeWpt(xmlNode* curNode, GPXdoc* myGPXdoc, Route* curRte, TrackSegment* c
         numAttr++;
     }
     if (attr == NULL && numAttr != 2) { //Waypoint must have 2 attributes
+    printf("ATTRIBUTE RELATED? number: %d\n\n", numAttr);
         deleteWaypoint(newWpt);
         return false;
     }
     for (attr = curNode->properties; attr != NULL; attr = attr->next) {
         if (!storeWptAttributes(attr, newWpt)) { //latitude and longitude must be initialized
+            printf("ATTRIBUTE RELATED 2?\n\n");
+
             deleteWaypoint(newWpt);
             return false;
         }
@@ -354,6 +360,8 @@ bool storeWpt(xmlNode* curNode, GPXdoc* myGPXdoc, Route* curRte, TrackSegment* c
                 storeWptName(xmlWptChild, newWpt);
             } else {
                 if (!storeWptOtherData(xmlWptChild, newWpt)) { //content name and value must not be empty strings
+                    printf("OTHER DATA RELATED??\n\n");
+
                     deleteWaypoint(newWpt);
                     return false;
                 }
@@ -652,7 +660,7 @@ int compareTrackSegments(const void *first, const void *second) {
 
 
 char* trackSegmentToString(void* data) {
-    char* result = (char*)calloc(2000, sizeof(char));
+    char* result;
     char* buffer;
     TrackSegment* tempTrkSeg;
 	int len;
@@ -661,7 +669,9 @@ char* trackSegmentToString(void* data) {
 		return NULL;
 	}
 	
-	tempTrkSeg = (TrackSegment*)data;
+    result = (char*)calloc(2000, sizeof(char));
+	
+    tempTrkSeg = (TrackSegment*)data;
     sprintf(result, "\nTrack Segment:");
 
     //track points (waypoints)
@@ -726,7 +736,7 @@ int compareTracks(const void *first, const void *second) {
 
 
 char* trackToString(void* data) {
-    char* result = (char*)calloc(2000, sizeof(char));
+    char* result;
     char* buffer;
     Track* tempTrk;
 	int len;
@@ -734,6 +744,8 @@ char* trackToString(void* data) {
 	if (data == NULL) {
 		return NULL;
 	}
+    
+    result = (char*)calloc(2000, sizeof(char));
 	
 	tempTrk = (Track*)data;
     sprintf(result, "\n*********************** \nTRACK:");
@@ -811,7 +823,7 @@ int compareRoutes(const void* first, const void* second) {
 
 
 char* routeToString(void* data) {
-    char* result = (char*)calloc(2000, sizeof(char));
+    char* result;
     char* buffer = NULL;
     Route* tempRte;
 	int len;
@@ -819,6 +831,8 @@ char* routeToString(void* data) {
 	if (data == NULL) {
 		return NULL;
 	}
+    
+    result = (char*)calloc(2000, sizeof(char));
 	
 	tempRte = (Route*)data;
     sprintf(result, "\n*********************** \nROUTE:");
@@ -852,9 +866,59 @@ char* routeToString(void* data) {
 }
 
 
-// Waypoint* getWaypoint(const GPXdoc* doc, char* name) {
+Waypoint* getWaypoint(const GPXdoc* doc, char* name) {
+    Waypoint* wptPtr;
+    
+    if(doc == NULL || name == NULL) {
+        return NULL;
+    }
 
-// }
+    ListIterator iter = createIterator(doc->waypoints);
+    while ((wptPtr = nextElement(&iter)) != NULL) {
+        if (strcmp(wptPtr->name, name) == 0) {
+            return wptPtr;
+        }
+    }
+
+    return NULL; //if waypoint element with passed in name not found, return NULL
+}
+
+
+Track* getTrack(const GPXdoc* doc, char* name) {
+    Track* trkPtr;
+    
+    if(doc == NULL || name == NULL) {
+        return NULL;
+    }
+
+    ListIterator iter = createIterator(doc->tracks);
+    while ((trkPtr = nextElement(&iter)) != NULL) {
+        if (strcmp(trkPtr->name, name) == 0) {
+            return trkPtr;
+        }
+    }
+
+    return NULL; //if track element with passed in name not found, return NULL
+}
+
+
+Route* getRoute(const GPXdoc* doc, char* name) {
+    Route* rtePtr;
+    
+    if(doc == NULL || name == NULL) {
+        return NULL;
+    }
+
+    ListIterator iter = createIterator(doc->routes);
+    while ((rtePtr = nextElement(&iter)) != NULL) {
+        if (strcmp(rtePtr->name, name) == 0) {
+            return rtePtr;
+        }
+    }
+
+    return NULL; //if route element with passed in name not found, return NULL
+}
+
 
 
 int getNumWaypoints(const GPXdoc* doc) {
@@ -904,7 +968,7 @@ int compareWaypoints(const void* first, const void* second) {
 
 
 char* waypointToString(void* data) {
-    char* result = (char*)calloc(2000, sizeof(char));
+    char* result;
     Waypoint* tempWpt;
 	int len;
 	
@@ -912,6 +976,8 @@ char* waypointToString(void* data) {
 		return NULL;
 	}
 	
+    result = (char*)calloc(2000, sizeof(char));
+    
     //name, lat, lon
 	tempWpt = (Waypoint*)data;
     sprintf(result, "\n*********************** \nWAYPOINT:"
@@ -993,13 +1059,15 @@ void deleteGpxData(void* data) {
 
 
 char* gpxDataToString(void* data) {
-    char* result = (char*)calloc(2000, sizeof(char));
+    char* result;
 	GPXData* tempOtherData;
 	int len;
 	
 	if (data == NULL) {
 		return NULL;
 	}
+
+    result = (char*)calloc(2000, sizeof(char));
 	
 	tempOtherData = (GPXData*)data;
     sprintf(result, "other data: \n-- name: %s \n-- value: %s", tempOtherData->name, tempOtherData->value);
