@@ -160,7 +160,7 @@ void storeTrkName(xmlNode* xmlTrkChild, Track* newTrk) {
         strcpy(newTrk->name, "");
     }
 
-    newTrk->name = realloc(newTrk->name, len + 1);
+    newTrk->name = (char*)realloc(newTrk->name, len + 1);
 
     return;
 }
@@ -174,11 +174,8 @@ bool storeTrkSeg(xmlNode* xmlTrkChild, Track* newTrk) {
     newTrkSeg->waypoints = initializeList(&waypointToString, &deleteWaypoint, &compareWaypoints);
 
     if (xmlTrkChild->children->children != NULL) { //if children exist for 'trkseg' element
-//        printf("ARE WE IN HERE?\n");
         strcpy(elemName, (char*)xmlTrkChild->children->name);
-//        printf("ELEM IS : %s\n", elemName);
         if (strcmp(elemName, "trkpt") == 0)  {
-//            printf("FOUND A TRACK POINT!!!\n");
             if (!storeWpt(xmlTrkChild, NULL, NULL, newTrkSeg)) { //store 'trkpt' in waypoints list of TrackSegment struct
                 return false;
             }
@@ -318,7 +315,7 @@ void storeRteName(xmlNode* xmlRteChild, Route* newRte) {
         strcpy(newRte->name, "");
     }
 
-    newRte->name = realloc(newRte->name, len + 1);
+    newRte->name =(char*)realloc(newRte->name, len + 1);
 
     return;
 }
@@ -455,7 +452,7 @@ void storeWptName(xmlNode* xmlWptChild, Waypoint* newWpt) {
         strcpy(newWpt->name, "");
     }
 
-    newWpt->name = realloc(newWpt->name, len + 1);
+    newWpt->name = (char*)realloc(newWpt->name, len + 1);
 
     return;
 }
@@ -600,6 +597,25 @@ bool storeGpxNamespace(xmlNode* rootNode, GPXdoc* myGPXdoc) {
 }
 
 
+int getNumSegments(const GPXdoc* doc) {
+    Track* trkPtr;
+    int numSegments = 0;
+
+    if (doc == NULL) {
+        return 0;
+    } 
+
+    if (getNumTracks(doc) != 0) {
+        ListIterator iter = createIterator(doc->tracks);
+        while ((trkPtr = nextElement(&iter)) != NULL) {
+            numSegments += getLength(trkPtr->segments);
+        }
+    }
+
+    return numSegments;
+}
+
+
 void deleteTrackSegment(void *data) {
     TrackSegment* tempTrkSegment;
 
@@ -636,7 +652,7 @@ int compareTrackSegments(const void *first, const void *second) {
 
 
 char* trackSegmentToString(void* data) {
-    char* result = (char*)calloc(1000, sizeof(char));
+    char* result = (char*)calloc(2000, sizeof(char));
     char* buffer;
     TrackSegment* tempTrkSeg;
 	int len;
@@ -656,9 +672,25 @@ char* trackSegmentToString(void* data) {
     }
 
     len = strlen(result); //strlen() excludes NULL terminator
-    result = realloc(result, len + 1);
+    result = (char*)realloc(result, len + 1);
 		
 	return result;
+}
+
+
+int getNumTracks(const GPXdoc* doc) {
+    int numTracks;
+
+    if (doc == NULL) {
+        return 0;
+    }
+
+    numTracks = getLength(doc->tracks);
+    if (numTracks == -1) {
+        return 0;
+    } else {
+        return numTracks;
+    }
 }
 
 
@@ -694,7 +726,7 @@ int compareTracks(const void *first, const void *second) {
 
 
 char* trackToString(void* data) {
-    char* result = (char*)calloc(1000, sizeof(char));
+    char* result = (char*)calloc(2000, sizeof(char));
     char* buffer;
     Track* tempTrk;
 	int len;
@@ -725,9 +757,25 @@ char* trackToString(void* data) {
     strcat(result, "\n***********************");
 
     len = strlen(result); //strlen() excludes NULL terminator
-    result = realloc(result, len + 1);
+    result = (char*)realloc(result, len + 1);
 		
 	return result;
+}
+
+
+int getNumRoutes(const GPXdoc* doc) {
+    int numRoutes;
+
+    if (doc == NULL) {
+        return 0;
+    }
+
+    numRoutes = getLength(doc->routes);
+    if (numRoutes == -1) {
+        return 0;
+    } else {
+        return numRoutes;
+    }
 }
 
 
@@ -763,8 +811,8 @@ int compareRoutes(const void* first, const void* second) {
 
 
 char* routeToString(void* data) {
-    char* result = (char*)calloc(1000, sizeof(char));
-    char* buffer;
+    char* result = (char*)calloc(2000, sizeof(char));
+    char* buffer = NULL;
     Route* tempRte;
 	int len;
 	
@@ -794,9 +842,34 @@ char* routeToString(void* data) {
     strcat(result, "\n***********************");
 
     len = strlen(result); //strlen() excludes NULL terminator
-    result = realloc(result, len + 1);
-		
+
+    char* temp = (char*)realloc(result, len + 1);
+	if (temp!= NULL) {
+        result = temp;
+    }
+
 	return result;
+}
+
+
+// Waypoint* getWaypoint(const GPXdoc* doc, char* name) {
+
+// }
+
+
+int getNumWaypoints(const GPXdoc* doc) {
+    int numWaypoints;
+
+    if (doc == NULL) {
+        return 0;
+    }
+
+    numWaypoints = getLength(doc->waypoints);
+    if (numWaypoints == -1) {
+        return 0;
+    } else {
+        return numWaypoints;
+    }
 }
 
 
@@ -831,7 +904,7 @@ int compareWaypoints(const void* first, const void* second) {
 
 
 char* waypointToString(void* data) {
-    char* result = (char*)calloc(1000, sizeof(char));
+    char* result = (char*)calloc(2000, sizeof(char));
     Waypoint* tempWpt;
 	int len;
 	
@@ -853,10 +926,57 @@ char* waypointToString(void* data) {
     strcat(result, "\n***********************");
 
     len = strlen(result); //strlen() excludes NULL terminator
-    result = realloc(result, len + 1);
+    result = (char*)realloc(result, len + 1);
 		
 	return result;
 }
+
+
+int getNumGPXData(const GPXdoc* doc) {
+    Track* trkPtr;
+    Route* rtePtr;
+    Waypoint* wptPtr;
+    int numGpxData = 0;
+    char buffer[100] = {'\0'};// = (char*)calloc(300, sizeof(char));
+
+    if (doc == NULL) {
+        return 0;
+    }
+
+    if (getNumTracks(doc) != 0) { //get num GPXdata structs in all tracks in GPXdoc
+        ListIterator iter = createIterator(doc->tracks);
+        while ((trkPtr = nextElement(&iter)) != NULL) {
+            numGpxData += getLength(trkPtr->otherData);
+            strcpy(buffer, trkPtr->name);
+            if (buffer[0] != '\0' || strcmp(buffer, "") != 0) { //include name in count unless if name is empty string
+                numGpxData++;
+            }
+        }
+    }
+    if (getNumRoutes(doc) != 0) { //get num GPXdata structs in all routes in GPXdoc
+        ListIterator iter = createIterator(doc->routes);
+        while ((rtePtr = nextElement(&iter)) != NULL) {
+            numGpxData += getLength(rtePtr->otherData);
+            strcpy(buffer, rtePtr->name);
+            if (buffer[0] != '\0' || strcmp(buffer, "") != 0) { //include name in count unless if name is empty string
+                numGpxData++;
+            }
+        }
+    }
+    if (getNumWaypoints(doc) != 0) { //get num GPXdata structs in all waypoints in GPXdoc
+        ListIterator iter = createIterator(doc->waypoints);
+        while ((wptPtr = nextElement(&iter)) != NULL) {
+            numGpxData += getLength(wptPtr->otherData);
+            strcpy(buffer, wptPtr->name);
+            if (buffer[0] != '\0' || strcmp(buffer, "") != 0) { //include name in count unless if name is empty string
+                numGpxData++;
+            }
+        }
+    }
+
+    return numGpxData;
+}
+
 
 
 void deleteGpxData(void* data) {
@@ -873,7 +993,7 @@ void deleteGpxData(void* data) {
 
 
 char* gpxDataToString(void* data) {
-    char* result = (char*)calloc(1000, sizeof(char));
+    char* result = (char*)calloc(2000, sizeof(char));
 	GPXData* tempOtherData;
 	int len;
 	
@@ -885,7 +1005,7 @@ char* gpxDataToString(void* data) {
     sprintf(result, "other data: \n-- name: %s \n-- value: %s", tempOtherData->name, tempOtherData->value);
 
 	len = strlen(result); //strlen() excludes NULL terminator
-	result = realloc(result, len + 1);
+	result = (char*)realloc(result, len + 1);
 		
 	return result;
 }
@@ -925,12 +1045,13 @@ char* GPXdocToString(GPXdoc* doc) {
     free(buffer);
 
     //ROUTES
+    
     strcat(result, "\n! DISPLAYING ALL ROUTES !");
     buffer = toString(doc->routes);
     strcat(result, buffer);
     strcat(result, "\n");
     free(buffer);
-
+    
     //TRACKS
     strcat(result, "\n! DISPLAYING ALL TRACKS !");
     buffer = toString(doc->tracks);
@@ -941,7 +1062,7 @@ char* GPXdocToString(GPXdoc* doc) {
     strcat(result,"------------------END OF DOC OBJECT TO STRING------------------\n");
 
     len = strlen(result); //strlen() excludes NULL terminator
-    result = realloc(result, len + 1);
+    result = (char*)realloc(result, len + 1);
     
     return result;
 }
