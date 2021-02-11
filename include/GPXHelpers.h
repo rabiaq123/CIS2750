@@ -58,7 +58,7 @@ bool storeGpxCreator(xmlNode* value, GPXdoc* myGPXdoc);
 void initializeReqLists(GPXdoc* myGPXdoc);
 
 /**
- * HELPER add one Waypoint struct to Waypoint list of GPXDoc struct, Route struct, or TrackSegment struct 
+ * HELPER add one Waypoint struct to waypoints list of GPXDoc struct, Route struct, or TrackSegment struct 
  * depending on where the waypoint is found in the file. Only one of *myGPXdoc, *curRoute, and *curTackSeg 
  * will be initialized - the rest will be passed as NULL pointer arguments.
  * @param curNode current node from which GPX file information is being parsed
@@ -109,9 +109,9 @@ bool storeWptOtherData(xmlNode* xmlWptChild, Waypoint* newWpt);
 bool storeWptAttributes(xmlAttr* attr, Waypoint* newWpt);
 
 /**
- * HELPER add one Route struct to Waypoint list from Route struct
+ * HELPER add one Route struct to routes list of GPXdoc struct
  * @param curNode current node from which GPX file information is being parsed
- * @param myGPXdoc pointer to GPX struct in which to store entire GPX file
+ * @param myGPXdoc pointer to GPX file struct in which to store route info if 'rte' child found in 'gpx' node
  * @return boolean value representing whether Route was parsed correctly - halt traversal process if false
  */
 bool storeRte(xmlNode* curNode, GPXdoc* myGPXdoc);
@@ -125,8 +125,40 @@ void storeRteName(xmlNode* xmlRteChild, Route* newRte);
 
 /**
  * HELPER store Waypoint's other data in current Waypoint struct
- * @param xmlRteChild current 'rte' child node to parse into GPXData struct for otherData list in newRte
- * @param newWpt pointer to Route struct to store other rte data in
+ * @param xmlRteChild current 'rte' child node to parse into otherData list in newRte
+ * @param newRte pointer to Route struct to store other rte data in
  * @return boolean value representing whether Route's other data was formatted properly in XML file - halt traversal if false
  */
 bool storeRteOtherData(xmlNode* xmlRteChild, Route* newRte);
+
+/**
+ * HELPER add one Track struct to tracks list of GPXdoc struct
+ * @param curNode current node from which GPX file information is being parsed
+ * @param myGPXdoc pointer to GPX file struct in which to store track info if 'trk' child found in 'gpx' node
+ * @return boolean value representing whether Track was parsed correctly - halt traversal process if false
+ */
+bool storeTrk(xmlNode* curNode, GPXdoc* myGPXdoc);
+
+/**
+ * HELPER store Track name in current Track struct
+ * @param xmlTrkChild current 'trk' child node from which one Track's information is being parsed
+ * @param newTrk pointer to Track struct to store name in
+ */
+void storeTrkName(xmlNode* xmlTrkChild, Track* newTrk);
+
+/**
+ * HELPER store Track's other data in current Track struct
+ * @param xmlTrkChild current 'trk' child node to parse into otherData list in newTrk
+ * @param newTrk pointer to Track struct to store other trk data in
+ * @return boolean value representing whether Track's other data was formatted properly in XML file - halt traversal if false
+ */
+bool storeTrkOtherData(xmlNode* xmlTrkChild, Track* newTrk);
+
+/**
+ * HELPER add one TrackSegment struct to segments list of Track struct
+ * @param xmlTrkChild current 'trk' child node to parse into segments list in newTrk
+ * @param newTrk pointer to Track struct to store trkseg data in
+ * @return boolean value representing whether TrackSeg was parsed correctly - halt traversal process if false
+ */
+bool storeTrkSeg(xmlNode* xmlTrkChild, Track* newTrk);
+
