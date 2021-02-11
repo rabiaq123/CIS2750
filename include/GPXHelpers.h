@@ -58,13 +58,16 @@ bool storeGpxCreator(xmlNode* value, GPXdoc* myGPXdoc);
 void initializeReqLists(GPXdoc* myGPXdoc);
 
 /**
- * HELPER add one Waypoint struct to Waypoint list from respective struct. 
- * NOTE the struct will be either of GPXdoc type, Route type, TrackSegment type.
+ * HELPER add one Waypoint struct to Waypoint list of GPXDoc struct, Route struct, or TrackSegment struct 
+ * depending on where the waypoint is found in the file. Only one of *myGPXdoc, *curRoute, and *curTackSeg 
+ * will be initialized - the rest will be passed as NULL pointer arguments.
  * @param curNode current node from which GPX file information is being parsed
- * @param myGPXdoc pointer to GPX struct in which to store entire GPX file
+ * @param myGPXdoc pointer to GPX file struct in which to store waypoint info if 'wpt' child found in 'gpx' node
+ * @param curRte pointer to Route struct in which to store waypoint info if 'rtept' child found in 'rte' node
+ * @param curTrkSeg pointer to TrackSegment struct in which to store waypoint info if 'trkpt' child found in 'trk' node
  * @return boolean value representing whether Waypoint was parsed correctly - halt traversal process if false
  */
-bool storeWpt(xmlNode *curNode, GPXdoc *myGPXdoc);
+bool storeWpt(xmlNode *curNode, GPXdoc *myGPXdoc, Route* curRte, TrackSegment* curTrkSeg);
 
 /**
  * HELPER store longitude attribute in current Waypoint struct
@@ -84,18 +87,18 @@ bool storeWptLatitude(xmlNode *curNode, Waypoint *newWpt);
 
 /**
  * HELPER store Waypoint name in current Waypoint struct
- * @param curNode current 'wpt' child node from which one Waypoint's information is being parsed
+ * @param xmlWptChild current 'wpt' child node from which one Waypoint's information is being parsed
  * @param newWpt pointer to Waypoint struct to store name in
  */
-void storeWptName(xmlNode *curNode, Waypoint *newWpt);
+void storeWptName(xmlNode *xmlWptChild, Waypoint *newWpt);
 
 /**
  * HELPER store Waypoint's other data in current Waypoint struct
- * @param wptChild current 'wpt' child node to parse into GPXData struct for otherData list in newWpt
+ * @param xmlWptChild current 'wpt' child node to parse into GPXData struct for otherData list in newWpt
  * @param newWpt pointer to Waypoint struct to store other wpt data in
  * @return boolean value representing whether Waypoint's other data was formatted properly in XML file - halt traversal if false
  */
-bool storeWptOtherData(xmlNode* wptChild, Waypoint* newWpt);
+bool storeWptOtherData(xmlNode* xmlWptChild, Waypoint* newWpt);
 
 /**
  * HELPER store Waypoint's attributes in current Waypoint struct
@@ -104,3 +107,26 @@ bool storeWptOtherData(xmlNode* wptChild, Waypoint* newWpt);
  * @param newWpt pointer to Waypoint struct to store attribute in
  */
 bool storeWptAttributes(xmlAttr* attr, Waypoint* newWpt);
+
+/**
+ * HELPER add one Route struct to Waypoint list from Route struct
+ * @param curNode current node from which GPX file information is being parsed
+ * @param myGPXdoc pointer to GPX struct in which to store entire GPX file
+ * @return boolean value representing whether Route was parsed correctly - halt traversal process if false
+ */
+bool storeRte(xmlNode* curNode, GPXdoc* myGPXdoc);
+
+/**
+ * HELPER store Route name in current Route struct
+ * @param xmlRteChild current 'rte' child node from which one Route's information is being parsed
+ * @param newRte pointer to Route struct to store name in
+ */
+void storeRteName(xmlNode* xmlRteChild, Route* newRte);
+
+/**
+ * HELPER store Waypoint's other data in current Waypoint struct
+ * @param xmlRteChild current 'rte' child node to parse into GPXData struct for otherData list in newRte
+ * @param newWpt pointer to Route struct to store other rte data in
+ * @return boolean value representing whether Route's other data was formatted properly in XML file - halt traversal if false
+ */
+bool storeRteOtherData(xmlNode* xmlRteChild, Route* newRte);

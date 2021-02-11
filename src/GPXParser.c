@@ -62,6 +62,7 @@ GPXdoc* createGPXdoc(char* fileName) {
 
 void initializeReqLists(GPXdoc* myGPXdoc) {
     myGPXdoc->waypoints = initializeList(&waypointToString, &deleteWaypoint, &compareWaypoints);
+    myGPXdoc->routes = initializeList(&routeToString, &deleteRoute, &compareRoutes);
 }
 
 
@@ -77,16 +78,16 @@ bool traverseGPXtree(xmlNode* node, GPXdoc* myGPXdoc) {
                     return false;
                 }
             } else if (strcmp((char*)curNode->name, "wpt") == 0) {
-                if (!storeWpt(curNode, myGPXdoc)) { //store one wpt
+                if (!storeWpt(curNode, myGPXdoc, NULL, NULL)) { //store wpt in waypoints list of GPXdoc struct
+                    return false;
+                }
+            } else if (strcmp((char*)curNode->name, "rte") == 0) {
+                if (!storeRte(curNode, myGPXdoc)) {
                     return false;
                 }
             } /*else if (strcmp((char*)curNode->name, "trk") == 0) {
 
-            } else if (strcmp((char*)curNode->name, "rte") == 0) {
-
             } else if (strcmp((char*)curNode->name, "trkseg") == 0) {
-
-            } else if (strcmp((char*)curNode->name, "rtept") == 0) {
 
             }*/
         }
@@ -101,7 +102,105 @@ bool traverseGPXtree(xmlNode* node, GPXdoc* myGPXdoc) {
 }
 
 
-bool storeWpt(xmlNode* curNode, GPXdoc* myGPXdoc) {
+bool storeRte(xmlNode* curNode, GPXdoc* myGPXdoc) {
+    Route* newRte;
+
+    newRte = (Route*)calloc(1, sizeof(Route));
+
+    //must not be NULL, may be empty
+    newRte->name = (char*)calloc(300, sizeof(char));
+    newRte->waypoints = initializeList(&waypointToString, &deleteWaypoint, &compareWaypoints);
+    newRte->otherData = initializeList(&gpxDataToString, &deleteGpxData, &compareGpxData);
+
+    //store content: name, rtepts (waypoints), and other data
+    for (xmlNode* xmlRteChild = curNode->children; xmlRteChild != NULL; xmlRteChild = xmlRteChild->next) {
+        if (xmlRteChild->type == XML_ELEMENT_NODE) {
+            if (strcmp((char*)xmlRteChild->name, "name") == 0) { //do not store 'name' child content in otherData list
+                storeRteName(xmlRteChild, newRte);
+            } else if (strcmp((char*)xmlRteChild->name, "rtept") == 0) {
+                if (!storeWpt(xmlRteChild, NULL, newRte, NULL)) { //store 'rtept' in waypoints list of Route struct
+                    deleteRoute(newRte);
+                    return false;
+                }
+            } else {
+                if (!storeRteOtherData(xmlRteChild, newRte)) { //other data's name and content must not be empty strings
+                    deleteRoute(newRte);
+                    return false;
+                }
+            }
+        }
+    }
+
+    insertBack(myGPXdoc->routes, newRte);
+
+    return true;
+}
+
+
+bool storeRteOtherData(xmlNode* xmlRteChild, Route* newRte) {
+    char nameBuffer[256] = {'\0'}, contentBuffer[300] = {'\0'};
+    GPXData* otherRteData; //objects in otherData list are of type GPXData
+    int len = 0;
+
+    //GPXData's name must not be an empty string (if other children exist in 'wpt')
+    if ((xmlChar)xmlRteChild->name[0] == '\0' || (xmlChar)xmlRteChild->name[0] == '\n') {
+        return false;
+    }
+
+    //if other children exist in 'rte', GPXData's content must not be an empty string
+    if (xmlRteChild->children == NULL) {
+        return false;
+    } else {
+        if ((xmlChar)xmlRteChild->children->content[0] == '\0' || (xmlChar)xmlRteChild->children->content[0] == '\n') {
+            return false;
+        }
+    }
+
+    //parse other data's name and content
+    strcpy(nameBuffer, (char*)xmlRteChild->name);
+    strcpy(contentBuffer, (char *)xmlRteChild->children->content);
+    len = strlen(contentBuffer); //strlen() excludes NULL terminator
+
+    //store parsed data into GPXData struct
+    otherRteData = (GPXData*)malloc(sizeof(GPXData) + (len + 1) * sizeof(char)); //malloc for len+1 chars in value[]
+    strcpy(otherRteData->name, nameBuffer);
+    strcpy(otherRteData->value, contentBuffer);
+
+    insertBack(newRte->otherData, otherRteData);
+
+    return true;
+}
+
+
+void storeRteName(xmlNode* xmlRteChild, Route* newRte) {
+    char buffer[300] = {'\0'};
+    bool isEmpty = false;
+    int len = 0;
+
+    if (xmlRteChild->children == NULL) { //name in Route struct must not be NULL
+        isEmpty = true;
+    } else {
+        if ((xmlChar)xmlRteChild->children->content[0] == '\0' || (xmlChar)xmlRteChild->children->content[0] == '\n') {
+            isEmpty = true;
+        }
+    }
+
+    //store 'name' content in Route struct
+    if (!isEmpty) {
+        strcpy(buffer, (char*)xmlRteChild->children->content);
+        len = strlen(buffer); //strlen() excludes NULL terminator
+        strcpy(newRte->name, buffer);
+    } else {
+        strcpy(newRte->name, "");
+    }
+
+    newRte->name = realloc(newRte->name, len + 1);
+
+    return;
+}
+
+
+bool storeWpt(xmlNode* curNode, GPXdoc* myGPXdoc, Route* curRte, TrackSegment* curTrkSeg) {
     Waypoint* newWpt;
     xmlAttr* attr;
     int numAttr = 0;
@@ -141,7 +240,14 @@ bool storeWpt(xmlNode* curNode, GPXdoc* myGPXdoc) {
         }
     }
 
-    insertBack(myGPXdoc->waypoints, newWpt);
+    //determine which struct's waypoint list of respective struct
+    if (myGPXdoc != NULL) {
+        insertBack(myGPXdoc->waypoints, newWpt);
+    } else if (curRte != NULL) {
+        insertBack(curRte->waypoints, newWpt);
+    } /*else if (curTrkSeg != NULL) {
+        insertBack(curTrkSeg->waypoints, newWpt);
+    }*/
 
     return true;
 }
@@ -170,7 +276,7 @@ bool storeWptAttributes(xmlAttr* attr, Waypoint* newWpt) {
 
 bool storeWptOtherData(xmlNode* xmlWptChild, Waypoint* newWpt) {
     char nameBuffer[256] = {'\0'}, contentBuffer[300] = {'\0'};
-    GPXData* otherWptData;
+    GPXData* otherWptData; //objects in otherData list are of type GPXdata
     int len = 0;
 
     //GPXData's name must not be an empty string (if other children exist in 'wpt')
@@ -178,7 +284,7 @@ bool storeWptOtherData(xmlNode* xmlWptChild, Waypoint* newWpt) {
         return false;
     }
 
-    //GPXData's content must not be an empty string (if other children exist in 'wpt')
+    //if other children exist in 'wpt', GPXData's content must not be an empty string
     if (xmlWptChild->children == NULL) {
         return false;
     } else {
@@ -187,33 +293,12 @@ bool storeWptOtherData(xmlNode* xmlWptChild, Waypoint* newWpt) {
         }
     }
 
-    //store other data's name and content in GPXData struct
+    //parse other data's name and content
     strcpy(nameBuffer, (char*)xmlWptChild->name);
     strcpy(contentBuffer, (char *)xmlWptChild->children->content);
     len = strlen(contentBuffer); //strlen() excludes NULL terminator
 
-
-
-    //error-checking for incorrectly formatted Waypoint child node
-    // if (xmlWptChild->name == NULL) {
-    //     return;
-    // }
-    // if(xmlWptChild->children->content == NULL) {
-    //     return;
-    // }
-
-    // //storing name of child node
-    // strcpy(nameBuffer, (char*)xmlWptChild->name);
-    // if (nameBuffer == '\0' || strcmp(nameBuffer, "") == 0) { //empty string
-    //     return;
-    // }
-
-    // //storing content of child node
-    // strcpy(contentBuffer, (char*)xmlWptChild->children->content);
-    // if (contentBuffer == '\0' || strcmp(contentBuffer, "") == 0) { //empty string
-    //     return;
-    // }
-
+    //store parsed data into GPXData struct
     otherWptData = (GPXData*)malloc(sizeof(GPXData) + (len + 1) * sizeof(char)); //malloc for len+1 chars in value[]
     strcpy(otherWptData->name, nameBuffer);
     strcpy(otherWptData->value, contentBuffer);
@@ -391,6 +476,74 @@ bool storeGpxNamespace(xmlNode* rootNode, GPXdoc* myGPXdoc) {
 }
 
 
+void deleteRoute(void* data) {
+    Route* tempRte;
+
+    if (data == NULL) {
+        return;
+    }
+
+    tempRte = (Route*)data;
+
+    free(tempRte->name);
+    freeList(tempRte->waypoints);
+    freeList(tempRte->otherData);
+    free(tempRte);
+}
+
+
+int compareRoutes(const void* first, const void* second) {
+    Route* tempRte1;
+	Route* tempRte2;
+	
+	if (first == NULL || second == NULL) { //error-checking
+		return 0;
+	}
+	
+	tempRte1 = (Route*)first;
+	tempRte2 = (Route*)second;
+	
+	return strcmp((char*)tempRte1->name, (char*)tempRte2->name);
+}
+
+
+char* routeToString(void* data) {
+    char* result = (char*)calloc(1000, sizeof(char));
+    char* buffer;
+    Route* tempRte;
+	int len;
+	
+	if (data == NULL) {
+		return NULL;
+	}
+	
+    //name
+	tempRte = (Route*)data;
+    sprintf(result, "\n*********************** \nROUTE:");
+    strcat(result, "\nname: ");
+    strcat(result, tempRte->name);
+    //other data
+    buffer = toString(tempRte->otherData);
+    if (buffer != NULL) {
+        strcat(result, buffer);
+        free(buffer);
+    }
+    // route points (waypoints)
+    buffer = toString(tempRte->waypoints);
+
+    if (buffer != NULL) {
+        strcat(result, buffer);
+        free(buffer);
+    }
+    strcat(result, "\n***********************");
+
+    len = strlen(result); //strlen() excludes NULL terminator
+    result = realloc(result, len + 1);
+		
+	return result;
+}
+
+
 void deleteWaypoint(void* data) {
     Waypoint* tempWpt;
 
@@ -432,10 +585,10 @@ char* waypointToString(void* data) {
 	
     //name, lat, lon
 	tempWpt = (Waypoint*)data;
-    sprintf(result, "\n*********************** \nWaypoint: \n***********************"
-                    "\nLAT: %f \nLON: %f",
+    sprintf(result, "\n*********************** \nWAYPOINT:"
+                    "\nlat: %f \nlon: %f",
                     tempWpt->latitude, tempWpt->longitude);
-    strcat(result, "\nNAME: ");
+    strcat(result, "\nname: ");
     strcat(result, tempWpt->name);
     //other data
     char* buffer = toString(tempWpt->otherData);
@@ -443,6 +596,7 @@ char* waypointToString(void* data) {
         strcat(result, buffer);
         free(buffer);
     }
+    strcat(result, "\n***********************");
 
     len = strlen(result); //strlen() excludes NULL terminator
     result = realloc(result, len + 1);
@@ -474,9 +628,9 @@ char* gpxDataToString(void* data) {
 	}
 	
 	tempOtherData = (GPXData*)data;
-    sprintf(result, "OTHERDATA: \n-- NAME: %s \n-- VALUE: %s", 
+    sprintf(result, "OtherData: \n-- name: %s \n-- value: %s", 
                     tempOtherData->name, tempOtherData->value);
-		
+
 	len = strlen(result); //strlen() excludes NULL terminator
 	result = realloc(result, len + 1);
 		
@@ -508,13 +662,22 @@ char* GPXdocToString(GPXdoc* doc) {
     // void* tempOtherData;
 
     //GPX (ROOT NODE) ATTRIBUTES
-    sprintf(result, "\n-------------------GPX DOC OBJECT TO STRING:-------------------\n"
-                    "*********************** \ngpx node: \n***********************"
-                    "\nNAMESPACE: %s \nVERSION: %f \nCREATOR: %s",
-            doc->namespace, doc->version, doc->creator);
-
+    sprintf(result, "\n-------------------GPX DOC OBJECT TO STRING:-------------------"
+                    "\n*********************** \nGPX NODE:"
+                    "\nnamespace: %s \nversion: %f \ncreator: %s",
+                    doc->namespace, doc->version, doc->creator);
+    strcat(result, " \n***********************");
+    
     //WAYPOINTS
+    strcat(result, "\n\n! DISPLAYING ALL WPTS !");
     buffer = toString(doc->waypoints);
+    strcat(result, buffer);
+    strcat(result, "\n");
+    free(buffer);
+
+    //ROUTES
+    strcat(result, "\n! DISPLAYING ALL ROUTES !");
+    buffer = toString(doc->routes);
     strcat(result, buffer);
     strcat(result, "\n");
     free(buffer);
@@ -550,6 +713,7 @@ void deleteGPXdoc(GPXdoc *doc) {
     if (doc != NULL) { //error-checking
         free(doc->creator);
         freeList(doc->waypoints);
+        freeList(doc->routes);
         free(doc);
         doc = NULL;
     }
