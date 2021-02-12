@@ -340,14 +340,11 @@ bool storeWpt(xmlNode* curNode, GPXdoc* myGPXdoc, Route* curRte, TrackSegment* c
         numAttr++;
     }
     if (attr == NULL && numAttr != 2) { //Waypoint must have 2 attributes
-    printf("ATTRIBUTE RELATED? number: %d\n\n", numAttr);
         deleteWaypoint(newWpt);
         return false;
     }
     for (attr = curNode->properties; attr != NULL; attr = attr->next) {
         if (!storeWptAttributes(attr, newWpt)) { //latitude and longitude must be initialized
-            printf("ATTRIBUTE RELATED 2?\n\n");
-
             deleteWaypoint(newWpt);
             return false;
         }
@@ -360,8 +357,6 @@ bool storeWpt(xmlNode* curNode, GPXdoc* myGPXdoc, Route* curRte, TrackSegment* c
                 storeWptName(xmlWptChild, newWpt);
             } else {
                 if (!storeWptOtherData(xmlWptChild, newWpt)) { //content name and value must not be empty strings
-                    printf("OTHER DATA RELATED??\n\n");
-
                     deleteWaypoint(newWpt);
                     return false;
                 }
