@@ -168,19 +168,19 @@ void storeTrkName(xmlNode* xmlTrkChild, Track* newTrk) {
 
 bool storeTrkSeg(xmlNode* xmlTrkChild, Track* newTrk) {
     TrackSegment* newTrkSeg = (TrackSegment*)calloc(1, sizeof(TrackSegment));
-    char elemName[100] = {'\0'};
-
+    //char elemName[100] = {'\0'};
+    //xmlNode* xmlTrkSegChild;
+    
     //must not be NULL, may be empty
     newTrkSeg->waypoints = initializeList(&waypointToString, &deleteWaypoint, &compareWaypoints);
 
     if (xmlTrkChild->children != NULL) { //if children exist for 'trkseg' element
-        //printf("check\n");
-        //strcpy(elemName, (char*)xmlTrkChild->children->next->name);
-        //printf("elem name: %s\n and content: %s\n", elemName, (char*)xmlTrkChild->children->next->content);
-        strcpy(elemName, (char*)xmlTrkChild->children->name);
-        if (strcmp(elemName, "trkpt") == 0)  {
-            if (!storeWpt(xmlTrkChild, NULL, NULL, newTrkSeg)) { //store 'trkpt' in waypoints list of TrackSegment struct
-                return false;
+        for (xmlNode* xmlTrkSegChild = xmlTrkChild->children->next; xmlTrkSegChild != NULL; xmlTrkSegChild = xmlTrkSegChild->next) {
+            if (strcmp((char*)(xmlTrkSegChild->name), "trkpt") == 0)  {
+                if (!storeWpt(xmlTrkSegChild, NULL, NULL, newTrkSeg)) { //store 'trkpt' in 'waypoints' list of TrackSegment struct
+                    deleteTrackSegment(newTrkSeg);
+                    return false;
+                }
             }
         }
     }
@@ -628,7 +628,7 @@ void deleteTrackSegment(void *data) {
 
     tempTrkSegment = (TrackSegment*)data;
 
-    free(tempTrkSegment->waypoints);
+    freeList(tempTrkSegment->waypoints);
     free(tempTrkSegment);
 }
 
@@ -995,41 +995,72 @@ char* waypointToString(void* data) {
 
 int getNumGPXData(const GPXdoc* doc) {
     Track* trkPtr;
+    TrackSegment* trksegPtr;
     Route* rtePtr;
-    Waypoint* wptPtr;
+    Waypoint* wptPtr, *rteptPtr, *trkptPtr;
     int numGpxData = 0;
-    char buffer[100] = {'\0'};// = (char*)calloc(300, sizeof(char));
+    char buffer[100] = {'\0'};
 
     if (doc == NULL) {
         return 0;
     }
 
-    if (getNumTracks(doc) != 0) { //get num GPXdata structs in all tracks in GPXdoc
+    if (getNumTracks(doc) != 0) {
         ListIterator iter = createIterator(doc->tracks);
         while ((trkPtr = nextElement(&iter)) != NULL) {
-            numGpxData += getLength(trkPtr->otherData);
+            numGpxData += getLength(trkPtr->otherData); //get num GPXData structs
+            //for track name
             strcpy(buffer, trkPtr->name);
-            if (buffer[0] != '\0' || strcmp(buffer, "") != 0) { //include name in count unless if name is empty string
+            if (buffer[0] != '\0' || strcmp(buffer, "") != 0) { //increment count unless empty
                 numGpxData++;
             }
+            //for track segments
+            ListIterator iterTrkSeg = createIterator(trkPtr->segments);
+            while ((trksegPtr = nextElement(&iterTrkSeg)) != NULL) {
+                //for track points
+                ListIterator iterTrkPt = createIterator(trksegPtr->waypoints);
+                while ((trkptPtr = nextElement(&iterTrkPt)) != NULL) {
+                    numGpxData += getLength(trkptPtr->otherData); //get num GPXData structs
+                    //for track point name
+                    memset(buffer, 0, 100); //clear contents
+                    strcpy(buffer, trkptPtr->name);
+                    if (buffer[0] != '\0' || strcmp(buffer, "") != 0) { //increment count unless empty
+                        numGpxData++;
+                    }
+                }
+            }
+
         }
     }
-    if (getNumRoutes(doc) != 0) { //get num GPXdata structs in all routes in GPXdoc
+    if (getNumRoutes(doc) != 0) {
         ListIterator iter = createIterator(doc->routes);
         while ((rtePtr = nextElement(&iter)) != NULL) {
-            numGpxData += getLength(rtePtr->otherData);
+            numGpxData += getLength(rtePtr->otherData); //get num GPXData structs
+            //for route name
             strcpy(buffer, rtePtr->name);
-            if (buffer[0] != '\0' || strcmp(buffer, "") != 0) { //include name in count unless if name is empty string
+            if (buffer[0] != '\0' || strcmp(buffer, "") != 0) { //increment count unless empty
                 numGpxData++;
+            }
+            //for route points
+            ListIterator iterRtept = createIterator(rtePtr->waypoints);
+            while ((rteptPtr = nextElement(&iterRtept)) != NULL) {
+                numGpxData += getLength(rteptPtr->otherData); //get num GPXData structs in rtept
+                //for route point name
+                memset(buffer, 0, 100); //clear contents
+                strcpy(buffer, rteptPtr->name);
+                if (buffer[0] != '\0' || strcmp(buffer, "") != 0) { //increment count unless empty
+                    numGpxData++;
+                }
             }
         }
     }
-    if (getNumWaypoints(doc) != 0) { //get num GPXdata structs in all waypoints in GPXdoc
+    if (getNumWaypoints(doc) != 0) {
         ListIterator iter = createIterator(doc->waypoints);
         while ((wptPtr = nextElement(&iter)) != NULL) {
-            numGpxData += getLength(wptPtr->otherData);
+            numGpxData += getLength(wptPtr->otherData); //get num GPXData structs
+            //for waypoint name
             strcpy(buffer, wptPtr->name);
-            if (buffer[0] != '\0' || strcmp(buffer, "") != 0) { //include name in count unless if name is empty string
+            if (buffer[0] != '\0' || strcmp(buffer, "") != 0) { //increment unless empty
                 numGpxData++;
             }
         }
