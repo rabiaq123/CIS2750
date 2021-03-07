@@ -40,7 +40,7 @@ $(BIN)mainTester.o: $(SRC)mainTester.c $(SRC)GPXParser.c
 
 #Added component for main
 clean:
-	rm -rf $(BIN)StructListDemo $(BIN)xmlExample $(BIN)mainTester mainTester $(BIN)*.o $(BIN)*.so
+	rm -rf $(BIN)StructListDemo $(BIN)xmlExample $(BIN)mainTester $(BIN)*.o $(BIN)*.so
 
 #This is the target for the in-class XML example
 xmlExample: $(SRC)libXmlExample.c
