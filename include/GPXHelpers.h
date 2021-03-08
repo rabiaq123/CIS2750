@@ -70,22 +70,6 @@ void initializeReqLists(GPXdoc* myGPXdoc);
 bool storeWpt(xmlNode *curNode, GPXdoc *myGPXdoc, Route* curRte, TrackSegment* curTrkSeg);
 
 /**
- * HELPER store longitude attribute in current Waypoint struct
- * @param curNode current node from which GPX file information is being parsed
- * @param newWpt pointer to Waypoint struct to store info in
- * @return boolean value representing whether longitude was parsed correctly - halt traversal process if false
- */
-bool storeWptLongitude(xmlNode *curNode, Waypoint *newWpt);
-
-/**
- * HELPER store latitude attribute in current Waypoint struct
- * @param curNode current node from which GPX file information is being parsed
- * @param newWpt pointer to Waypoint struct to store info in
- * @return boolean value representing whether latitude was parsed correctly - halt traversal process if false
- */
-bool storeWptLatitude(xmlNode *curNode, Waypoint *newWpt);
-
-/**
  * HELPER store Waypoint name in current Waypoint struct
  * @param xmlWptChild current 'wpt' child node from which one Waypoint's information is being parsed
  * @param newWpt pointer to Waypoint struct to store name in
