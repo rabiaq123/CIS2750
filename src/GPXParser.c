@@ -31,18 +31,13 @@ GPXdoc* createGPXdoc(char* fileName) {
     LIBXML_TEST_VERSION
 
     //error-checking for invalid filename
-    if (fileName == NULL || strcmp(fileName, "") == 0) {
-        return NULL;
-    }
-
+    if (fileName == NULL || strcmp(fileName, "") == 0) return NULL;
     xmlDoc* file = NULL;
     xmlNode* rootElement = NULL;
 
     //attempt to parse XML file
     file = xmlReadFile(fileName, NULL, 0);
-    if (file == NULL) { //return if not a well-formed XML
-        return NULL;
-    }
+    if (file == NULL) return NULL; //return if not a well-formed XML
     rootElement = xmlDocGetRootElement(file); //get the root element node 'gpx'
 
     GPXdoc* myGPXdoc = (GPXdoc*)calloc(1, sizeof(GPXdoc)); //calloc() initializes memory allocated to 0
@@ -168,8 +163,6 @@ void storeTrkName(xmlNode* xmlTrkChild, Track* newTrk) {
 
 bool storeTrkSeg(xmlNode* xmlTrkChild, Track* newTrk) {
     TrackSegment* newTrkSeg = (TrackSegment*)calloc(1, sizeof(TrackSegment));
-    //char elemName[100] = {'\0'};
-    //xmlNode* xmlTrkSegChild;
     
     //must not be NULL, may be empty
     newTrkSeg->waypoints = initializeList(&waypointToString, &deleteWaypoint, &compareWaypoints);
@@ -196,7 +189,7 @@ bool storeTrkOtherData(xmlNode* xmlTrkChild, Track* newTrk) {
     GPXData* otherTrackData; //objects in otherData list are of type GPXData
     int len = 0;
 
-    //GPXData's name must not be an empty string (if other children exist in 'wpt')
+    //if other children exist in 'trk', their name must not be an empty string (GPXData struct specifications)
     if ((xmlChar)xmlTrkChild->name[0] == '\0' || (xmlChar)xmlTrkChild->name[0] == '\n') {
         return false;
     }
@@ -266,7 +259,7 @@ bool storeRteOtherData(xmlNode* xmlRteChild, Route* newRte) {
     GPXData* otherRteData; //objects in otherData list are of type GPXData
     int len = 0;
 
-    //GPXData's name must not be an empty string (if other children exist in 'wpt')
+    //if other children exist in 'rte', their name must not be an empty string (GPXData struct specifications)
     if ((xmlChar)xmlRteChild->name[0] == '\0' || (xmlChar)xmlRteChild->name[0] == '\n') {
         return false;
     }
@@ -364,7 +357,7 @@ bool storeWpt(xmlNode* curNode, GPXdoc* myGPXdoc, Route* curRte, TrackSegment* c
         }
     }
 
-    //determine which struct's waypoint list of respective struct
+    //determine which struct's waypoint list to add new waypoint into
     if (myGPXdoc != NULL) {
         insertBack(myGPXdoc->waypoints, newWpt);
     } else if (curRte != NULL) {
@@ -378,20 +371,33 @@ bool storeWpt(xmlNode* curNode, GPXdoc* myGPXdoc, Route* curRte, TrackSegment* c
 
 
 bool storeWptAttributes(xmlAttr* attr, Waypoint* newWpt) {
+    double wptAttrVal;
+    char *ptr;
+    char buffer[100] = {'\0'};
+    xmlNode* value;
+
     if (strcmp((char*)attr->name, "lon") != 0 && strcmp((char*)attr->name, "lat") != 0) { //can only be 'lat' or 'lon'
         return false;
     }
 
-    //latitude and longitude must be initialized
-    if (strcmp((char*)attr->name, "lon") == 0) {
-        if (!storeWptLongitude(attr->children, newWpt)) { //store the the longitude
-            return false;
-        }
+    value = attr->children;
+
+    //error-checking for no latitude/longitude value (core data of the wpt)
+    if (value->content == NULL) {
+        return false;
     }
-    if (strcmp((char*)attr->name, "lat") == 0) {
-        if (!storeWptLatitude(attr->children, newWpt)) { //store the latitude
-            return false;
-        }
+
+    strcpy(buffer, (char *)value->content);
+    if (buffer == '\0' || strcmp(buffer, "") == 0) { //attribute content must be initialized
+        return false;
+    }
+
+    //store in Waypoint struct
+    wptAttrVal = strtod(buffer, &ptr); //convert char* to type double
+    if (strcmp((char*)attr->name, "lon") == 0) {
+        newWpt->longitude = wptAttrVal;   
+    } else {
+        newWpt->latitude = wptAttrVal;
     }
 
     return true;
@@ -403,7 +409,7 @@ bool storeWptOtherData(xmlNode* xmlWptChild, Waypoint* newWpt) {
     GPXData* otherWptData; //objects in otherData list are of type GPXdata
     int len = 0;
 
-    //GPXData's name must not be an empty string (if other children exist in 'wpt')
+    //if other children exist in 'wpt', their name must not be an empty string (GPXData struct specifications)
     if ((xmlChar)xmlWptChild->name[0] == '\0' || (xmlChar)xmlWptChild->name[0] == '\n') {
         return false;
     }
@@ -461,52 +467,6 @@ void storeWptName(xmlNode* xmlWptChild, Waypoint* newWpt) {
 }
 
 
-bool storeWptLatitude(xmlNode* value, Waypoint* newWpt) {
-    double lat;
-    char *ptr;
-    char buffer[100] = {'\0'};
-
-    //error-checking for no latitude (core data of the wpt)
-    if(value->content == NULL) {
-        return false;
-    }
-
-    strcpy(buffer, (char*)value->content);
-    if (buffer == '\0' || strcmp(buffer, "") == 0) { //latitude must be initialized
-        return false;
-    }
-
-    //store in Waypoint struct
-    lat = strtod(buffer, &ptr); //convert char* to type double
-    newWpt->latitude = lat;
-
-    return true;
-}
-
-
-bool storeWptLongitude(xmlNode* value, Waypoint* newWpt) {
-    double lon;
-    char *ptr;
-    char buffer[100] = {'\0'};
-
-    //error-checking for no latitude (core data of the wpt)
-    if(value->content == NULL) {
-        return false;
-    }
-
-    strcpy(buffer, (char*)value->content);
-    if (buffer == '\0' || strcmp(buffer, "") == 0) { //longitude must be initialized
-        return false;
-    }
-
-    //store in Waypoint struct
-    lon = strtod(buffer, &ptr); //convert char* to type double
-    newWpt->longitude = lon;
-
-    return true;
-}
-
-
 bool storeGpxAttributes(xmlNode* curNode, GPXdoc* myGPXdoc) {
     xmlAttr* attr;
 
@@ -539,7 +499,7 @@ bool storeGpxCreator(xmlNode* value, GPXdoc* myGPXdoc) {
     int len;
 
     //error-checking for incorrectly formatted creator value
-    if(value->content == NULL) {
+    if (value->content == NULL) {
         return false;
     }
 
@@ -635,22 +595,22 @@ void deleteTrackSegment(void *data) {
 
 int compareTrackSegments(const void *first, const void *second) {
     TrackSegment* tempTrkSeg1;
-	TrackSegment* tempTrkSeg2;
+    TrackSegment* tempTrkSeg2;
     char buffer1[100] = {'\0'}, buffer2[100] = {'\0'};
-	
-	if (first == NULL || second == NULL) { //error-checking
-		return 0;
-	}
-	
-	tempTrkSeg1 = (TrackSegment*)first;
-	tempTrkSeg2 = (TrackSegment*)second;
+    
+    if (first == NULL || second == NULL) { //error-checking
+        return 0;
+    }
+
+    tempTrkSeg1 = (TrackSegment*)first;
+    tempTrkSeg2 = (TrackSegment*)second;
 
     Waypoint* tempWpt1 = (Waypoint*)getFromFront(tempTrkSeg1->waypoints);
     Waypoint* tempWpt2 = (Waypoint*)getFromFront(tempTrkSeg2->waypoints);
     strcpy(buffer1, tempWpt1->name);
     strcpy(buffer2, tempWpt2->name);
 
-	return strcmp((char*)tempTrkSeg1->waypoints, (char*)tempTrkSeg2->waypoints);
+    return strcmp((char*)tempTrkSeg1->waypoints, (char*)tempTrkSeg2->waypoints);
 }
 
 
@@ -658,14 +618,14 @@ char* trackSegmentToString(void* data) {
     char* result;
     char* buffer;
     TrackSegment* tempTrkSeg;
-	int len;
-	
-	if (data == NULL) {
-		return NULL;
-	}
-	
+    int len;
+    
+    if (data == NULL) {
+        return NULL;
+    }
+    
     result = (char*)calloc(2000, sizeof(char));
-	
+    
     tempTrkSeg = (TrackSegment*)data;
     sprintf(result, "\nTrack Segment:");
 
@@ -678,8 +638,8 @@ char* trackSegmentToString(void* data) {
 
     len = strlen(result); //strlen() excludes NULL terminator
     result = (char*)realloc(result, len + 1);
-		
-	return result;
+        
+    return result;
 }
 
 
@@ -717,16 +677,16 @@ void deleteTrack(void *data) {
 
 int compareTracks(const void *first, const void *second) {
     Track* tempTrk1;
-	Track* tempTrk2;
-	
-	if (first == NULL || second == NULL) { //error-checking
-		return 0;
-	}
+    Track* tempTrk2;
+    
+    if (first == NULL || second == NULL) { //error-checking
+        return 0;
+    }
 
-	tempTrk1 = (Track*)first;
-	tempTrk2 = (Track*)second;
-	
-	return strcmp((char*)tempTrk1->name, (char*)tempTrk2->name);
+    tempTrk1 = (Track*)first;
+    tempTrk2 = (Track*)second;
+    
+    return strcmp((char*)tempTrk1->name, (char*)tempTrk2->name);
 }
 
 
@@ -734,15 +694,15 @@ char* trackToString(void* data) {
     char* result;
     char* buffer;
     Track* tempTrk;
-	int len;
-	
-	if (data == NULL) {
-		return NULL;
-	}
+    int len;
+    
+    if (data == NULL) {
+        return NULL;
+    }
     
     result = (char*)calloc(2000, sizeof(char));
-	
-	tempTrk = (Track*)data;
+    
+    tempTrk = (Track*)data;
     sprintf(result, "\n*********************** \nTRACK:");
 
     //name
@@ -765,8 +725,8 @@ char* trackToString(void* data) {
 
     len = strlen(result); //strlen() excludes NULL terminator
     result = (char*)realloc(result, len + 1);
-		
-	return result;
+        
+    return result;
 }
 
 
@@ -804,16 +764,16 @@ void deleteRoute(void* data) {
 
 int compareRoutes(const void* first, const void* second) {
     Route* tempRte1;
-	Route* tempRte2;
-	
-	if (first == NULL || second == NULL) { //error-checking
-		return 0;
-	}
-	
-	tempRte1 = (Route*)first;
-	tempRte2 = (Route*)second;
-	
-	return strcmp((char*)tempRte1->name, (char*)tempRte2->name);
+    Route* tempRte2;
+    
+    if (first == NULL || second == NULL) { //error-checking
+        return 0;
+    }
+    
+    tempRte1 = (Route*)first;
+    tempRte2 = (Route*)second;
+    
+    return strcmp((char*)tempRte1->name, (char*)tempRte2->name);
 }
 
 
@@ -821,15 +781,15 @@ char* routeToString(void* data) {
     char* result;
     char* buffer = NULL;
     Route* tempRte;
-	int len;
-	
-	if (data == NULL) {
-		return NULL;
-	}
+    int len;
+    
+    if (data == NULL) {
+        return NULL;
+    }
     
     result = (char*)calloc(2000, sizeof(char));
-	
-	tempRte = (Route*)data;
+    
+    tempRte = (Route*)data;
     sprintf(result, "\n*********************** \nROUTE:");
 
     //name
@@ -853,11 +813,11 @@ char* routeToString(void* data) {
     len = strlen(result); //strlen() excludes NULL terminator
 
     char* temp = (char*)realloc(result, len + 1);
-	if (temp!= NULL) {
+    if (temp!= NULL) {
         result = temp;
     }
 
-	return result;
+    return result;
 }
 
 
@@ -949,32 +909,32 @@ void deleteWaypoint(void* data) {
 
 int compareWaypoints(const void* first, const void* second) {
     Waypoint* tempWpt1;
-	Waypoint* tempWpt2;
-	
-	if (first == NULL || second == NULL) { //error-checking
-		return 0;
-	}
-	
-	tempWpt1 = (Waypoint*)first;
-	tempWpt2 = (Waypoint*)second;
-	
-	return strcmp((char*)tempWpt1->name, (char*)tempWpt2->name);
+    Waypoint* tempWpt2;
+    
+    if (first == NULL || second == NULL) { //error-checking
+        return 0;
+    }
+    
+    tempWpt1 = (Waypoint*)first;
+    tempWpt2 = (Waypoint*)second;
+    
+    return strcmp((char*)tempWpt1->name, (char*)tempWpt2->name);
 }
 
 
 char* waypointToString(void* data) {
     char* result;
     Waypoint* tempWpt;
-	int len;
-	
-	if (data == NULL) {
-		return NULL;
-	}
-	
+    int len;
+    
+    if (data == NULL) {
+        return NULL;
+    }
+    
     result = (char*)calloc(2000, sizeof(char));
     
     //name, lat, lon
-	tempWpt = (Waypoint*)data;
+    tempWpt = (Waypoint*)data;
     sprintf(result, "\n*********************** \nWAYPOINT:"
                     "\nname: %s \nlat: %f \nlon: %f", tempWpt->name, tempWpt->latitude, tempWpt->longitude);
     //other data
@@ -988,8 +948,8 @@ char* waypointToString(void* data) {
 
     len = strlen(result); //strlen() excludes NULL terminator
     result = (char*)realloc(result, len + 1);
-		
-	return result;
+        
+    return result;
 }
 
 
@@ -1086,37 +1046,37 @@ void deleteGpxData(void* data) {
 
 char* gpxDataToString(void* data) {
     char* result;
-	GPXData* tempOtherData;
-	int len;
-	
-	if (data == NULL) {
-		return NULL;
-	}
+    GPXData* tempOtherData;
+    int len;
+    
+    if (data == NULL) {
+        return NULL;
+    }
 
     result = (char*)calloc(2000, sizeof(char));
-	
-	tempOtherData = (GPXData*)data;
+    
+    tempOtherData = (GPXData*)data;
     sprintf(result, "other data: \n-- name: %s \n-- value: %s", tempOtherData->name, tempOtherData->value);
 
-	len = strlen(result); //strlen() excludes NULL terminator
-	result = (char*)realloc(result, len + 1);
-		
-	return result;
+    len = strlen(result); //strlen() excludes NULL terminator
+    result = (char*)realloc(result, len + 1);
+        
+    return result;
 }
 
 
 int compareGpxData(const void* first, const void* second) {
     GPXData* tempOtherData1;
-	GPXData* tempOtherData2;
-	
-	if (first == NULL || second == NULL) { //error-checking
-		return 0;
-	}
+    GPXData* tempOtherData2;
+    
+    if (first == NULL || second == NULL) { //error-checking
+        return 0;
+    }
 
-	tempOtherData1 = (GPXData*)first;
-	tempOtherData2 = (GPXData*)second;
-	
-	return strcmp((char*)tempOtherData1->name, (char*)tempOtherData2->name);
+    tempOtherData1 = (GPXData*)first;
+    tempOtherData2 = (GPXData*)second;
+    
+    return strcmp((char*)tempOtherData1->name, (char*)tempOtherData2->name);
 }
 
 
