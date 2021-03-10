@@ -230,7 +230,7 @@ bool writeGPXdoc(GPXdoc* doc, char* fileName);
 
 /** Function that returns the length of a Route
  *@pre Route object exists, is not null, and has not been freed
- *@post Route object had been freed
+ *@post Route object must not be modified in any way
  *@return length of the route in meters
  *@param rt - a pointer to a Route struct
 **/
@@ -238,7 +238,7 @@ float getRouteLen(const Route *rt);
 
 /** Function that returns the length of a Track
  *@pre Track object exists, is not null, and has not been freed
- *@post Track object had been freed
+ *@post Track object must not be modified in any way
  *@return length of the track in meters
  *@param tr - a pointer to a Track struct
 **/
@@ -246,7 +246,7 @@ float getTrackLen(const Track *tr);
 
 /** Function that rounds the length of a track or a route to the nearest 10m
  *@pre Length is not negative
-  *@return length rounded to the nearest 10m
+ *@return length rounded to the nearest 10m
  *@param len - length
 **/
 float round10(float len);
