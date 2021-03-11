@@ -260,6 +260,7 @@ void createNewWpt(Waypoint* curWpt, xmlNode* pNode, char* nodeName) {
     }
 }
 
+
 void createNewRte(Route* curRte, xmlNode* pNode) {
     xmlNode* rteNode = NULL;
     ListIterator iter;
@@ -463,10 +464,10 @@ double calcDistance(double lat1, double lon1, double lat2, double lon2) {
     double a, c, dist;
 
     //convert to radians
-    lat1 *= (M_PI/180);
-    lon1 *= (M_PI/180);
-    lat2 *= (M_PI/180);
-    lon2 *= (M_PI/180);
+    lat1 *= (M_PI/180.0);
+    lon1 *= (M_PI/180.0);
+    lat2 *= (M_PI/180.0);
+    lon2 *= (M_PI/180.0);
     //middle steps
     double latCalc = sin((lat2 - lat1) / 2.0);
     double lonCalc = sin((lon2 - lon1) / 2.0);
@@ -494,6 +495,7 @@ int numRoutesWithLength(const GPXdoc* doc, float len, float delta) {
 
     return numRoutes;
 }
+
 
 int numTracksWithLength(const GPXdoc* doc, float len, float delta) {
     if (doc == NULL || len < 0 || delta < 0) return 0;
@@ -531,7 +533,7 @@ bool isLoopRoute(const Route* rte, float delta) {
     d = calcDistance(lat1, lon1, lat2, lon2);
 
     //check Loop Route condition (satisfied if numRtepts >=4 && d < delta)
-    if (numRtepts < 4 && d >= delta) return false;
+    if (numRtepts < 4 || d >= delta) return false;
 
     return true;
 }
@@ -568,7 +570,7 @@ bool isLoopTrack(const Track *trk, float delta) {
     d = calcDistance(lat1, lon1, lat2, lon2);
 
     //check Loop Track condition (satisfied if numTrkpts >=4 && d < delta)
-    if (numTrkpts < 4 && d >= delta) return false;
+    if (numTrkpts < 4 || d >= delta) return false;
 
 //    printf("\n\nNUM TRACK POINTS IS %d and DISTANCE IS %f\n\n", numTrkpts, d);
 
@@ -645,14 +647,73 @@ List* getTracksBetween(const GPXdoc* doc, float sourceLat, float sourceLong, flo
 char* trackToJSON(const Track *trk) {
     if (trk == NULL) return "{}";
 
-    return "placeholder";
+    char *stringJSON = calloc(1000, sizeof(char));
+    char name[200] = {'\0'};
+    char len[10] = {'\0'};
+    char isLoop[6] = "true"; //"true" or "false"
+
+    //finding name
+    if (trk->name == NULL || strcmp(trk->name, "") == 0) strcpy(name, "None");
+    else strcpy(name, trk->name);
+    //finding track len, rounded to the nearest 10
+    sprintf(len, "%.1f", round10(getTrackLen(trk)));
+    //finding loop stat
+    if (!isLoopTrack(trk, 10.0)) strcpy(isLoop, "false");
+
+    //{"name":"track_name",
+    sprintf(stringJSON, "{\"name\":\"%s\",", name);
+    //"len":track_len,
+    strcat(stringJSON, "\"len\":");
+    strcat(stringJSON, len);
+    strcat(stringJSON, ",");
+    //"loop":loopStat}
+    strcat(stringJSON, "\"loop\":");
+    strcat(stringJSON, isLoop);
+    strcat(stringJSON, "}");
+
+    stringJSON = realloc(stringJSON, sizeof(char) * (strlen(stringJSON) + 1));
+
+    return stringJSON;
 }
 
 
 char* routeToJSON(const Route *rte) {
     if (rte == NULL) return "{}";
 
-    return "placeholder";
+    char *stringJSON = calloc(1000, sizeof(char));
+    char name[200] = {'\0'};
+    char numPoints[10] = {'\0'};
+    char len[10] = {'\0'};
+    char isLoop[6] = "true"; //"true" or "false"
+
+    //finding name
+    if (rte->name == NULL || strcmp(rte->name, "") == 0) strcpy(name, "None");
+    else strcpy(name, rte->name);
+    //finding num points
+    sprintf(numPoints, "%d", getLength(rte->waypoints));
+    //finding route len, rounded to the nearest 10
+    sprintf(len, "%.1f", round10(getRouteLen(rte)));
+    //finding loop stat
+    if (!isLoopRoute(rte, 10.0)) strcpy(isLoop, "false");
+
+    //{"name":"route_name",
+    sprintf(stringJSON, "{\"name\":\"%s\",", name);
+    //"numPoints":num_points,
+    strcat(stringJSON, "\"numPoints\":");
+    strcat(stringJSON, numPoints);
+    strcat(stringJSON, ",");
+    //"len":route_len,
+    strcat(stringJSON, "\"len\":");
+    strcat(stringJSON, len);
+    strcat(stringJSON, ",");
+    //"loop":loopStat}
+    strcat(stringJSON, "\"loop\":");
+    strcat(stringJSON, isLoop);
+    strcat(stringJSON, "}");
+
+    stringJSON = realloc(stringJSON, sizeof(char) * (strlen(stringJSON) + 1));
+
+    return stringJSON;
 }
 
 
