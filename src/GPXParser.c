@@ -42,7 +42,7 @@ GPXdoc* createValidGPXdoc(char* fileName, char* gpxSchemaFile) {
     file = xmlReadFile(fileName, NULL, 0);
     if (file == NULL) return NULL; //not a well-formed XML
 
-    if (!validateXML(file, gpxSchemaFile)) { //XML file validation against GPX schema failed
+    if (!validateXML(file, gpxSchemaFile)) { //validate XML file against GPX schema
         xmlFreeDoc(file);
         return NULL;
     }
@@ -429,8 +429,8 @@ float getTrackLen(const Track* trk) {
     if (trk == NULL) return 0;
 
     Waypoint* wpt1, *wpt2, *segStart;
-    double lat1 = 0, lat2 = 0, lon1 = 0, lon2 = 0;
-    float d = 0;
+    double lat1, lat2, lon1, lon2;
+    float d;
     TrackSegment *trkseg;
     int numSegments = 0;
 
@@ -439,7 +439,7 @@ float getTrackLen(const Track* trk) {
         //calculating distance between between adjacent segments
         segStart = getFromFront(trkseg->waypoints);
         numSegments++;
-        if (numSegments == 2) {
+        if (numSegments >= 2) {
             d += calcDistance(lat1, lon1, segStart->latitude, segStart->longitude); //previous trkpt to start of new seg
         }
         //calculating distance between trkpts
@@ -477,9 +477,6 @@ double calcDistance(double lat1, double lon1, double lat2, double lon2) {
 
     return dist;
 }
-
-
-/***A2 incomplete functions***/
 
 
 int numRoutesWithLength(const GPXdoc* doc, float len, float delta) {
@@ -526,14 +523,14 @@ bool isLoopRoute(const Route* rte, float delta) {
     rtept1 = getFromFront(rte->waypoints);
     rtept2 = getFromBack(rte->waypoints);
 
-    //calculate distance between first and last points and compare to delta
+    //calculate distance between first and last rtepts and compare to delta
     lat1 = rtept1->latitude;
     lon1 = rtept1->longitude;
     lat2 = rtept2->latitude;
     lon2 = rtept2->longitude;
     d = calcDistance(lat1, lon1, lat2, lon2);
 
-    //check Loop Route condition
+    //check Loop Route condition (satisfied if numRtepts >=4 && d < delta)
     if (numRtepts < 4 && d >= delta) return false;
 
     return true;
@@ -570,7 +567,7 @@ bool isLoopTrack(const Track *trk, float delta) {
     lon2 = trkpt2->longitude;
     d = calcDistance(lat1, lon1, lat2, lon2);
 
-    //check Loop Track condition
+    //check Loop Track condition (satisfied if numTrkpts >=4 && d < delta)
     if (numTrkpts < 4 && d >= delta) return false;
 
 //    printf("\n\nNUM TRACK POINTS IS %d and DISTANCE IS %f\n\n", numTrkpts, d);
@@ -614,8 +611,35 @@ void dummyDelete(void *data) {
 List* getTracksBetween(const GPXdoc* doc, float sourceLat, float sourceLong, float destLat, float destLong, float delta) {
     if (doc == NULL) return NULL;
 
-    return NULL;
+    List *trkList = initializeList(&trackToString, &dummyDelete, &compareTracks);
+    Track *trk;
+    TrackSegment *trkseg;
+    Waypoint *trkpt1, *trkpt2;
+    int dist1, dist2;
+
+    //for every Track node in tracks list
+    ListIterator iter = createIterator(doc->tracks);
+    while ((trk = nextElement(&iter)) != NULL) {
+        ListIterator iterTrkseg = createIterator(trk->segments);
+        while((trkseg = nextElement(&iterTrkseg)) != NULL) {
+            //calculate haversine for first trkpt
+            trkpt1 = getFromFront(trkseg->waypoints);
+            dist1 = calcDistance(trkpt1->latitude, trkpt1->longitude, sourceLat, sourceLong);
+            //calculate haversine for destination trkpt
+            trkpt2 = getFromBack(trkseg->waypoints);
+            dist2 = calcDistance(trkpt2->latitude, trkpt2->longitude, destLat, destLong);
+            //if both source and destination are within (<=) delta, add Track to the list
+            if (dist1 <= delta && dist2 <= delta) insertBack(trkList, trk);
+        }
+    }
+
+    if (getLength(trkList) == 0) return 0;
+
+    return trkList;
 }
+
+
+/***A2 incomplete functions***/
 
 
 char* trackToJSON(const Track *trk) {
