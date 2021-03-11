@@ -15,8 +15,15 @@
 /**********A2 helper functions**********/
 
 /**
+ * HELPER validate GPXdoc struct against GPXParser.h specifications
+ * @param gpxDoc GPXDoc struct to be validated
+ * @return boolean representing whether GPXdoc follows GPXParser.h specifications
+ */
+bool followsSpecifications(GPXdoc *gpxDoc);
+
+/**
  * HELPER convert the GPXdoc struct to an xmlDoc (XML tree)
- * @param gpxDoc GPXDoc struct
+ * @param gpxDoc GPXDoc struct to be converted to XML ree
  * @return pointer to xmlDoc struct (XML tree) after conversion
  */
 xmlDoc* convertToXMLDoc(GPXdoc* gpxDoc);
@@ -75,8 +82,20 @@ void createNewTrk(Track* newTrk, xmlNode* pNode);
 
 /**
  * HELPER calculate distance between 2 points using haversine formula
+ * @param lat1 latitude of starting point
+ * @param lat2 latitude of end point
+ * @param lon1 longitude of starting point
+ * @param lon2 longitude of end point
+ * @return haversine distance
  */ 
 double calcDistance(double lat1, double lat2, double lon1, double lon2);
+
+/**
+ * HELPER stub for ListAPI delete function, so the list is cleared but 
+ * the nodes in the original GPXdoc are undamaged. 
+ * @param data a pointer of any type to be deleted/freed
+ */
+void dummyDelete(void *data);
 
 /**********A1 helper functions**********/
 
