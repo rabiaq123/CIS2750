@@ -88,6 +88,8 @@ bool validateGPXDoc(GPXdoc* gpxDoc, char* gpxSchemaFile) {
     if (!validateTrkGPXDoc(gpxDoc)) return false; //tracks list
     if (!validateWptGPXDoc(gpxDoc)) return false; //waypoints list
 
+    xmlFreeDoc(file);
+
     return true;
 }
 
