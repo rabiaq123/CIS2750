@@ -718,23 +718,69 @@ char* routeToJSON(const Route *rte) {
 
 
 char *routeListToJSON(const List *list){
-    if (list == NULL) return "{}";
+    if (list == NULL) return "[]";
 
-    return "placeholder";
+    char *stringJSON = calloc(10000, sizeof(char));
+    char *rteBuffer;
+    Route *rte;
+    int i = 0;
+
+    sprintf(stringJSON, "[");
+
+    ListIterator iter = createIterator((List*)list);
+    while ((rte = nextElement(&iter)) != NULL) {
+        if (++i >= 2) strcat(stringJSON, ","); //comma shouldn't follow last JSON string
+        rteBuffer = routeToJSON(rte);
+        strcat(stringJSON, rteBuffer);
+        free(rteBuffer);
+    }
+
+    strcat(stringJSON, "]");
+
+    stringJSON = realloc(stringJSON, sizeof(char) * (strlen(stringJSON) + 1));
+
+    return stringJSON;
 }
 
 
 char* trackListToJSON(const List *list) {
-    if (list == NULL) return "{}";
+    if (list == NULL) return "[]";
 
-    return "placeholder";
+    char *stringJSON = calloc(10000, sizeof(char));
+    char *trkBuffer;
+    Track *trk;
+    int i = 0;
+
+    sprintf(stringJSON, "[");
+
+    ListIterator iter = createIterator((List*)list);
+    while ((trk = nextElement(&iter)) != NULL) {
+        if (++i >= 2) strcat(stringJSON, ","); //comma shouldn't follow last JSON string
+        trkBuffer = trackToJSON(trk);
+        strcat(stringJSON, trkBuffer);
+        free(trkBuffer);
+    }
+
+    strcat(stringJSON, "]");
+
+    stringJSON = realloc(stringJSON, sizeof(char) * (strlen(stringJSON) + 1));
+
+    return stringJSON;
 }
 
 
 char* GPXtoJSON(const GPXdoc* gpx) {
     if (gpx == NULL) return "{}";
 
-    return "placeholder";
+    char *stringJSON = calloc(10000, sizeof(char));
+
+    //{"version":ver,"creator":"crVal","numWaypoints":numW,"numRoutes":numR,"numTracks":numT}
+    sprintf(stringJSON, "{\"version\":%.1f,\"creator\":\"%s\",\"numWaypoints\":%d,\"numRoutes\":%d,\"numTracks\":%d}",
+            gpx->version, gpx->creator, getNumWaypoints(gpx), getNumRoutes(gpx), getNumTracks(gpx));
+
+    stringJSON = realloc(stringJSON, sizeof(char) * (strlen(stringJSON) + 1));
+
+    return stringJSON;
 }
 
 
