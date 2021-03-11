@@ -5,11 +5,80 @@
  */
 
 #include <stdio.h>
+#include <string.h>
+#include <stdbool.h>
 #include <libxml/parser.h>
 #include <libxml/tree.h>
+#include <libxml/xmlschemastypes.h>
 #include "LinkedListAPI.h"
-#include <string.h>
 
+/**********A2 helper functions**********/
+
+/**
+ * HELPER convert the GPXdoc struct to an xmlDoc (XML tree)
+ * @param gpxDoc GPXDoc struct
+ * @return pointer to xmlDoc struct (XML tree) after conversion
+ */
+xmlDoc* convertToXMLDoc(GPXdoc* gpxDoc);
+
+/**
+ * HELPER validate the XML file against an XSD representing the GPX standard 
+ * before proceeding to parse the file. 
+ * @param file XMLDoc struct returned by xmlReadFile()
+ * @param gpxSchemaFile schema filename
+ * @return boolean representing whether XML file abides by GPX standards in XSD
+ */
+bool validateXML(xmlDoc* file, char* gpxSchemaFile);
+
+/**
+ * HELPER check Route constraints from GPXParser.h before proceeding to parse file. 
+ * @param gpxDoc GPXdoc struct passed in by user from validateGPXDoc()
+ * @return boolean representing whether Routes list and its elements abide by constraints from GPXParser.h
+ */
+bool validateRteGPXDoc(GPXdoc* gpxDoc);
+
+/**
+ * HELPER check Track constraints from GPXParser.h before proceeding to parse file. 
+ * @param gpxDoc GPXdoc struct passed in by user from validateGPXDoc()
+ * @return boolean representing whether Tracks list and its elements abide by constraints from GPXParser.h
+ */
+bool validateTrkGPXDoc(GPXdoc* gpxDoc);
+
+/**
+ * HELPER check Waypoint constraints from GPXParser.h before proceeding to parse file. 
+ * @param gpxDoc GPXdoc struct passed in by user from validateGPXDoc()
+ * @return boolean representing whether Waypoints list and its elements abide by constraints from GPXParser.h
+ */
+bool validateWptGPXDoc(GPXdoc* gpxDoc);
+
+/**
+ * HELPER add new Route XML node to parent node for XML tree
+ * @param newRte Route struct to be parsed and added as child node of parent
+ * @param pNode xmlNode representing parent node to add Route xmlNode to
+ */
+void createNewRte(Route* newRte, xmlNode* pNode);
+
+/**
+ * HELPER add new Waypoint XML node to parent node for XML tree
+ * @param newWpt Waypoint struct to be parsed and added as child node of parent
+ * @param pNode xmlNode representing parent node to add Waypoint xmlNode to
+ * @param nodeName name of Waypoint node (can be 'wpt', 'rtept', or 'trkpt')
+ */
+void createNewWpt(Waypoint* newWpt, xmlNode* pNode, char* nodeName);
+
+/**
+ * HELPER add new Track XML node to parent node for XML tree
+ * @param newTrk Track struct to be parsed and added as child node of parent
+ * @param pNode xmlNode representing parent node to add Track xmlNode to
+ */
+void createNewTrk(Track* newTrk, xmlNode* pNode);
+
+/**
+ * HELPER calculate distance between 2 points using haversine formula
+ */ 
+double calcDistance(double lat1, double lat2, double lon1, double lon2);
+
+/**********A1 helper functions**********/
 
 /**
  * HELPER traverse XML tree formed with file and parse contents into GPXdoc object
