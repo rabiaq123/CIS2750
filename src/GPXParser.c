@@ -144,7 +144,6 @@ bool validateXML(xmlDoc* file, char* gpxSchemaFile) {
     xmlSchemaFreeValidCtxt(ctxt2);
     if (schema != NULL) xmlSchemaFree(schema);
     xmlSchemaCleanupTypes();
-//    xmlCleanupParser();
     xmlMemoryDump();
 
     return true;
@@ -482,6 +481,7 @@ double calcDistance(double lat1, double lon1, double lat2, double lon2) {
 
 int numRoutesWithLength(const GPXdoc* doc, float len, float delta) {
     if (doc == NULL || len < 0 || delta < 0) return 0;
+//    printf("len: %f, delta: %f\n", len, delta);
 
     Route *rte;
     int numRoutes = 0;
@@ -490,8 +490,11 @@ int numRoutesWithLength(const GPXdoc* doc, float len, float delta) {
     while((rte = nextElement(&iter)) != NULL) {
         float routeLen = getRouteLen(rte);
         float diff = fabs(routeLen - len);
+//        printf("\tDIFFERENCE: %f\n", diff);
         if (diff <= delta) numRoutes++; //within acceptable range
     }
+
+    //printf("IN NUMROUTESWITHLENGTH: %d\n", numRoutes);
 
     return numRoutes;
 }
@@ -639,9 +642,6 @@ List* getTracksBetween(const GPXdoc* doc, float sourceLat, float sourceLong, flo
 
     return trkList;
 }
-
-
-/***A2 incomplete functions***/
 
 
 char* trackToJSON(const Track *trk) {
