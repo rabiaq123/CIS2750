@@ -575,8 +575,6 @@ bool isLoopTrack(const Track *trk, float delta) {
     //check Loop Track condition (satisfied if numTrkpts >=4 && d < delta)
     if (numTrkpts < 4 || d >= delta) return false;
 
-//    printf("\n\nNUM TRACK POINTS IS %d and DISTANCE IS %f\n\n", numTrkpts, d);
-
     return true;
 }
 
