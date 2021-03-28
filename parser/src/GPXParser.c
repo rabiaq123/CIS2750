@@ -27,6 +27,21 @@
  */
 
 
+/***A3 functions***/
+
+char* GPXFiletoJSON(char* fileName) {
+    GPXdoc *doc = createValidGPXdoc(fileName, "./parser/gpx.xsd");
+    if (doc == NULL) return NULL;
+
+    char *JSONstr = GPXtoJSON(doc);
+    deleteGPXdoc(doc);
+
+    return JSONstr; 
+}
+
+/***A2 functions***/
+
+
 GPXdoc* createValidGPXdoc(char* fileName, char* gpxSchemaFile) {
     xmlDoc* file = NULL;
     xmlNode* rootElement = NULL;
@@ -490,11 +505,8 @@ int numRoutesWithLength(const GPXdoc* doc, float len, float delta) {
     while((rte = nextElement(&iter)) != NULL) {
         float routeLen = getRouteLen(rte);
         float diff = fabs(routeLen - len);
-//        printf("\tDIFFERENCE: %f\n", diff);
         if (diff <= delta) numRoutes++; //within acceptable range
     }
-
-    //printf("IN NUMROUTESWITHLENGTH: %d\n", numRoutes);
 
     return numRoutes;
 }
@@ -643,9 +655,14 @@ List* getTracksBetween(const GPXdoc* doc, float sourceLat, float sourceLong, flo
 
 
 char* trackToJSON(const Track *trk) {
-    if (trk == NULL) return "{}";
+    char *stringJSON = calloc(10000, sizeof(char));
 
-    char *stringJSON = calloc(1000, sizeof(char));
+    if (trk == NULL) {
+        strcpy(stringJSON, "{}");
+        stringJSON = realloc(stringJSON, sizeof(char) * (strlen(stringJSON) + 1));
+        return stringJSON; //ptr to statically allocated string e.g. "{}" when returned will be NULL
+    }
+
     char name[200] = {'\0'};
     char len[10] = {'\0'};
     char isLoop[6] = "true"; //"true" or "false"
@@ -676,9 +693,14 @@ char* trackToJSON(const Track *trk) {
 
 
 char* routeToJSON(const Route *rte) {
-    if (rte == NULL) return "{}";
+    char *stringJSON = calloc(10000, sizeof(char));
 
-    char *stringJSON = calloc(1000, sizeof(char));
+    if (rte == NULL) {
+        strcpy(stringJSON, "{}");
+        stringJSON = realloc(stringJSON, sizeof(char) * (strlen(stringJSON) + 1));
+        return stringJSON; //ptr to statically allocated string e.g. "{}" when returned will be NULL
+    }
+
     char name[200] = {'\0'};
     char numPoints[10] = {'\0'};
     char len[10] = {'\0'};
@@ -716,9 +738,14 @@ char* routeToJSON(const Route *rte) {
 
 
 char *routeListToJSON(const List *list){
-    if (list == NULL) return "[]";
-
     char *stringJSON = calloc(10000, sizeof(char));
+
+    if (list == NULL) {
+        strcpy(stringJSON, "[]");
+        stringJSON = realloc(stringJSON, sizeof(char) * (strlen(stringJSON) + 1));
+        return stringJSON; //ptr to statically allocated string e.g. "[]" when returned will be NULL
+    }
+
     char *rteBuffer;
     Route *rte;
     int i = 0;
@@ -742,9 +769,14 @@ char *routeListToJSON(const List *list){
 
 
 char* trackListToJSON(const List *list) {
-    if (list == NULL) return "[]";
-
     char *stringJSON = calloc(10000, sizeof(char));
+
+    if (list == NULL) {
+        strcpy(stringJSON, "[]");
+        stringJSON = realloc(stringJSON, sizeof(char) * (strlen(stringJSON) + 1));
+        return stringJSON; //ptr to statically allocated string e.g. "[]" when returned will be NULL
+    }
+
     char *trkBuffer;
     Track *trk;
     int i = 0;
@@ -768,9 +800,13 @@ char* trackListToJSON(const List *list) {
 
 
 char* GPXtoJSON(const GPXdoc* gpx) {
-    if (gpx == NULL) return "{}";
-
     char *stringJSON = calloc(10000, sizeof(char));
+
+    if (gpx == NULL) {
+        strcpy(stringJSON, "{}");
+        stringJSON = realloc(stringJSON, sizeof(char) * (strlen(stringJSON) + 1));
+        return stringJSON; //ptr to statically allocated string e.g. "{}" when returned will be NULL
+    }
 
     //{"version":ver,"creator":"crVal","numWaypoints":numW,"numRoutes":numR,"numTracks":numT}
     sprintf(stringJSON, "{\"version\":%.1f,\"creator\":\"%s\",\"numWaypoints\":%d,\"numRoutes\":%d,\"numTracks\":%d}",

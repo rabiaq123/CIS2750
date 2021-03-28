@@ -1,6 +1,6 @@
 'use strict'
 
-// C library API
+// C library API - ffi-napi is a Node.js addon for loading and calling dynamic libraries
 const ffi = require('ffi-napi');
 
 // Express App (Routes)
@@ -61,23 +61,48 @@ app.post('/upload', function(req, res) {
 app.get('/uploads/:name', function(req , res){
   fs.stat('uploads/' + req.params.name, function(err, stat) {
     if(err == null) {
-      res.sendFile(path.join(__dirname+'/uploads/' + req.params.name));
+        res.sendFile(path.join(__dirname+'/uploads/' + req.params.name));
     } else {
-      console.log('Error in file downloading route: '+err);
-      res.send('');
+        console.log('Error in file downloading route: '+err);
+        res.send('');
     }
   });
 });
 
 //******************** Your code goes here ******************** 
 
-//Sample endpoint
-app.get('/endpoint1', function(req , res){
-  let retStr = req.query.stuff + " " + req.query.junk;
-  res.send({
-    stuff: retStr
-  });
+let GPXParserLib = ffi.Library('./libgpxparser', {
+    //return type of calling function first, argument list (what we're passing into function) second
+    //for void input type, leave argument list empty
+    //listing all wrappers
+    
 });
+
+
+//send array of filenames in uploads directory
+app.get('/getGPXFilesInUploadsDir', function (req, res) {
+    const dir = path.join(__dirname, 'uploads'); //directory path
+
+    //read directory
+    fs.readdir(dir, function (error, files) {
+        //handle error in reading
+        if (error) return console.log('ERROR: could not read directory: ' + error);
+        res.send({
+            filenames: files
+        });
+    });
+});
+
+
+
+
+// //Sample endpoint
+// app.get('/endpoint1', function(req , res){ //request (shit we're passing) and response (shit we're sending back)
+//     let retStr = req.query.stuff + " " + req.query.junk;
+//     res.send({
+//         stuff: retStr
+//     }); //getting JSON object
+// });
 
 app.listen(portNum);
 console.log('Running app at localhost: ' + portNum);

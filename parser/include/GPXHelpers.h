@@ -12,6 +12,15 @@
 #include <libxml/xmlschemastypes.h>
 #include "LinkedListAPI.h"
 
+/**********A3 helper functions**********/
+
+/**
+ * HELPER convert file to GPX object and return a JSON string representation of it
+ * @param filename
+ * @return JSON string representation of file
+ */
+char* GPXFiletoJSON(char* fileName);
+
 /**********A2 helper functions**********/
 
 /**
