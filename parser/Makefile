@@ -6,6 +6,7 @@ LDFLAGS= -L.
 INC = include/
 SRC = src/
 BIN = bin/
+ROOT = ../
 PARSER_SRC_FILES = $(wildcard src/GPX*.c)
 PARSER_OBJ_FILES = $(patsubst src/GPX%.c,bin/GPX%.o,$(PARSER_SRC_FILES))
 
@@ -16,10 +17,12 @@ ifeq ($(UNAME), Darwin)
 	XML_PATH = /System/Volumes/Data/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/libxml2
 endif
 
-parser: $(BIN)libgpxparser.so
+all: parser
 
-$(BIN)libgpxparser.so: $(PARSER_OBJ_FILES) $(BIN)LinkedListAPI.o
-	gcc -shared -o $(BIN)libgpxparser.so $(PARSER_OBJ_FILES) $(BIN)LinkedListAPI.o -lxml2 -lm
+parser: $(ROOT)libgpxparser.so
+
+$(ROOT)libgpxparser.so: $(PARSER_OBJ_FILES) $(BIN)LinkedListAPI.o
+	gcc -shared -o $(ROOT)libgpxparser.so $(PARSER_OBJ_FILES) $(BIN)LinkedListAPI.o -lxml2 -lm
 
 #Compiles all files named GPX*.c in src/ into object files, places all coresponding GPX*.o files in bin/
 $(BIN)GPX%.o: $(SRC)GPX%.c $(INC)LinkedListAPI.h $(INC)GPX*.h

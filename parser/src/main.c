@@ -26,9 +26,10 @@ int main() {
     }
     writeGPXdoc(doc, "/home/undergrad/0/rqureshi/Desktop/W21/CIS2750/SampleGPXfiles/doc.gpx");
 
-    printf("1. NUMROUTESWITHLENGTH: %d\n", numRoutesWithLength(doc, 1960.00, 10.00));
-    printf("2. NUMROUTESWITHLENGTH: %d\n", numRoutesWithLength(doc, 4220.00, 10.00));
-    printf("3. NUMROUTESWITHLENGTH: %d\n", numRoutesWithLength(doc, 200.00, 10.00));
+    //int len = numRoutesWithLength(doc, 4220.00, 10.00);
+    //printf("1.\nin main NUMROUTESWITHLENGTH: %d\n", numRoutesWithLength(doc, 1960.00, 10.00));
+    //printf("2.\nin main NUMROUTESWITHLENGTH: %d\n", numRoutesWithLength(doc, 4220.00, 10.00));
+    //printf("3.\nin main NUMROUTESWITHLENGTH: %d\n", numRoutesWithLength(doc, 200.00, 10.00));
 
     GPXstring = GPXdocToString(doc);
     /*

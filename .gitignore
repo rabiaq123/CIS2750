@@ -8,3 +8,4 @@
 # Other generated files from IDE #
 ######################
 ./vscode
+node_modules
