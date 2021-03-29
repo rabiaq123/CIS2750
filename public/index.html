@@ -25,49 +25,57 @@
         <hr>
         <h2>File Log Panel</h2>
         <br>
-        <table id="FileLogTable">
-            <!--table headers-->
-            <thead>
-                <tr>
-                    <th>File name (click to download)</th>
-                    <th>Version</th>
-                    <th>Creator</th>
-                    <th># of Waypoints</th>
-                    <th># of Routes</th>
-                    <th># of Tracks</th>
-                </tr>
-            </thead>
-            <!--every row in tbody contains one file name and its basic info-->
-            <tbody></tbody>
-        </table>
+        <!--table should be scrollable-->
+        <div class="table-wrapper-scroll-y my-custom-scrollbar" id="FileLogTableDiv">
+            <table id="FileLogTable">
+                <!--table headers-->
+                <thead>
+                    <tr>
+                        <th>File name (click to download)</th>
+                        <th>Version</th>
+                        <th>Creator</th>
+                        <th>Num Waypoints</th>
+                        <th>Num Routes</th>
+                        <th>Num Tracks</th>
+                    </tr>
+                </thead>
+                <!--every row in tbody contains one file name and its basic info-->
+                <tbody></tbody>
+            </table>
+        </div>
         <br>
         <!--getting the file and shit-->
-        <form id='GPXUploadForm' action='/upload' method='post' encType="multipart/form-data">
+        <form ref='uploadForm' id='GPXUploadForm' action='/upload' method='post' encType="multipart/form-data">
             <div class="form-group">
                 <input type="file" id="GPXUpload" name="uploadFile" class="btn btn-secondary" accept=".gpx">
                 <input type='submit' id="GPXUploadButton" value='Upload' class="btn btn-secondary">
             </div>
         </form>
-
-        <!-- <button id="FileLogUploadButton" onclick="AddDummyRow()">Add Dummy Row</button> -->
-        <!-- <div class="panel-heading">Panel Heading</div>
-        <div class="panel-body">Panel Content</div> -->
     </div>
 
     <!--GPX VIEW PANEL-->
     <div class="w3-panel" id = "GPXViewPanel">
         <hr>
+        <!--dropdown to select GPX file-->
+        <label for="GPXViewDropdown">Select GPX file: </label>
+        <select id="GPXViewDropdown">
+            <option value=" " selected> </option> <!--file should not be selected by default-->
+        </select>
+        <!--view selected file's contents-->
         <h2>GPX View Panel</h2>
         <br>
-        <table id="GPXViewTable">
-            <tr>
-                <th>Component</th> <!--click for more options?? e.g. rename component, view other data-->
-                <th>Name</th>
-                <th># of points</th>
-                <th>Length</th>
-                <th>Loop</th>
-            </tr>
-        </table>
+        <!--table should be scrollable-->
+        <div class="table-wrapper-scroll-y my-custom-scrollbar" id="GPXViewTableDiv" >
+            <table id="GPXViewTable">
+                <tr>
+                    <th>Component</th> <!--click for more options?? e.g. rename component, view other data-->
+                    <th>Name</th>
+                    <th># of points</th>
+                    <th>Length</th>
+                    <th>Loop</th>
+                </tr>
+            </table>
+        </div>
         <br>
         <button id="GPXViewAddRowButton" onclick="AddDummyRow()">Add Dummy Row</button>
     </div>
@@ -80,37 +88,11 @@
     </div>
 
 
-    <!-- <a href="simple.gpx" download ">simple.gpx</a> -->
+    <a href="simple.gpx" download>simple.gpx</a>
     <br>
     <br>
-
-    <!-- <hr>
-        <div id="blah">I am blah</div>
-    <hr> -->
 
     <!--getting GPX file name from user-->
-    <!-- <form ref='someform'
-          id='someform'>
-        <div class="form-group">
-            <label for="entryBox">Last Name</label>
-            <input type="text" class="form-control" id="entryBox" value="Value" placeholder="Placeholder">
-        </div>
-        <div class="form-group">
-            <input type='submit' class="btn btn-secondary">
-        </div>
-    </form> -->
-
-    <!--getting the file and shit-->
-    <!-- <form ref='uploadForm'
-	    id='uploadForm'
-        action='/upload'
-        method='post'
-        encType="multipart/form-data">
-        <div class="form-group">
-      	    <input type="file" name="uploadFile" class="btn btn-secondary">
-      	    <input type='submit' value='Upload' class="btn btn-secondary">
-        </div>
-    </form> -->
 
     <!-- Leave me at the bottom of body -->
     <script src="/index.js"></script>

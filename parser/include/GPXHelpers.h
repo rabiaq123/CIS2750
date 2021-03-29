@@ -19,7 +19,7 @@
  * @param filename
  * @return JSON string representation of file
  */
-char* GPXFiletoJSON(char* fileName);
+char *GPXFileToJSON(char *fileName);
 
 /**********A2 helper functions**********/
 

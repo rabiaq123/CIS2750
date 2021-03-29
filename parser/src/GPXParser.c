@@ -29,7 +29,7 @@
 
 /***A3 functions***/
 
-char* GPXFiletoJSON(char* fileName) {
+char* GPXFileToJSON(char* fileName) {
     GPXdoc *doc = createValidGPXdoc(fileName, "./parser/gpx.xsd");
     if (doc == NULL) return NULL;
 

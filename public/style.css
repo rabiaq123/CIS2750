@@ -47,19 +47,14 @@ table, th, td {
     padding: 10px;
     text-align: center;
 }
-table #FileLogTable {
-    overflow-y: scroll;
-    overflow-x: scroll;
-    height: 10px;
-    width: 100%;
-    display: block;
+div #FileLogTableDiv {
+    background-color: rgb(232, 239, 241);
 }
-table #GPXViewTable {
-    overflow-y: scroll;
-    overflow-x: scroll;
-    width: 100%;
-    display: block;
+.my-custom-scrollbar {
+    position: relative;
+    height: 150px;
+    overflow: auto;
 }
 a {
-    color:rgb(118, 176, 196);
+    color:rgb(101, 165, 187);
 }
