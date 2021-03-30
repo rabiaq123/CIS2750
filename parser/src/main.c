@@ -10,8 +10,8 @@
 int main() {
     GPXdoc* doc = NULL;
     char* GPXstring;
-    char file[] = "/home/undergrad/0/rqureshi/Desktop/W21/CIS2750/A2-files/A2pre/A2pre/testFiles/GHTC_James-Stone.gpx";
-    char schema[] = "/home/undergrad/0/rqureshi/Desktop/W21/CIS2750/A2-files/gpx.xsd";
+    char file[] = "/home/undergrad/0/rqureshi/Desktop/W21/CIS2750/cis2750w21_project/uploads/Memorial_Forest_Loop(1rt_0trk_0seg_430m).gpx";
+    char schema[] = "/home/undergrad/0/rqureshi/Desktop/W21/CIS2750/cis2750w21_project/parser/gpx.xsd";
 
     //attempt to parse XML file
     doc = createValidGPXdoc(file, schema);
@@ -38,6 +38,17 @@ int main() {
     printf("getNumWaypoints: %d, \ngetNumRoutes: %d, \ngetNumTracks: %d, \ngetNumSegments: %d, \ngetNumGPXData: %d\n",
             getNumWaypoints(doc), getNumRoutes(doc), getNumTracks(doc), getNumSegments(doc), getNumGPXData(doc));
     */
+
+    //find Route children nodes of root node
+    Route *rtePtr;
+    ListIterator iter = createIterator(doc->routes);
+    while ((rtePtr = nextElement(&iter)) != NULL) {
+        if (routeToJSON(rtePtr) != NULL) {
+
+        printf(routeToJSON(rtePtr));
+        }
+    }
+    printf("\n");
 
     free(GPXstring);
     deleteGPXdoc(doc);

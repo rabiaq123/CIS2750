@@ -35,14 +35,14 @@ $(BIN)LinkedListAPI.o: $(SRC)LinkedListAPI.c $(INC)LinkedListAPI.h
 	$(CC) $(CFLAGS) -c -fpic -I$(INC) $(SRC)LinkedListAPI.c -o $(BIN)LinkedListAPI.o
 
 #Added target for main file (with my basic caller)
-main: $(BIN)main.o $(BIN)GPXParser.o $(BIN)liblist.so $(BIN)libgpxparser.so
+main: $(BIN)main.o $(BIN)GPXParser.o $(BIN)liblist.so $(ROOT)libgpxparser.so
 	$(CC) $(CFLAGS) -I$(XML_PATH) $(LDFLAGS) -L$(BIN) -o $(BIN)main $(BIN)main.o $(BIN)GPXParser.o -lxml2 -lm -llist
 	
 $(BIN)main.o: $(SRC)main.c $(SRC)GPXParser.c
 	$(CC) $(CFLAGS) -I$(XML_PATH) -I$(INC) -c $(SRC)main.c -o $(BIN)main.o
 
 #Added target for mainTester file (with multiple tests for each function)
-mainTester: $(BIN)mainTester.o $(BIN)GPXParser.o $(BIN)liblist.so $(BIN)libgpxparser.so
+mainTester: $(BIN)mainTester.o $(BIN)GPXParser.o $(BIN)liblist.so $(ROOT)libgpxparser.so
 	$(CC) $(CFLAGS) -I$(XML_PATH) $(LDFLAGS) -L$(BIN) -o $(BIN)mainTester $(BIN)mainTester.o $(BIN)GPXParser.o -lxml2 -lm -llist
 	
 $(BIN)mainTester.o: $(SRC)mainTester.c $(SRC)GPXParser.c
