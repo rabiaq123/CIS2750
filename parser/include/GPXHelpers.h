@@ -15,6 +15,41 @@
 /**********A3 helper functions**********/
 
 /**
+ * HELPER get number of trkpts in track (from all track segments)
+ * @param trk track to find num trkpts for
+ * @return num trkpts in track
+ */
+int getNumTrkptsInTrack(const Track *trk);
+
+/**
+ * HELPER get JSON string of one track including the number of points (trkpts) for the track
+ * @param trk track to be parsed into JSON string
+ * @return JSON string representing given track
+ */
+char* detailedTrackToJSON(const Track *trk);
+
+/**
+ * HELPER get JSON string of all tracks including the number of points (trkpts) for each track
+ * @param list pointer to a List struct
+ * @return JSON string representing all tracks in file
+ */
+char *detailedTrackListToJSON(const List *list);
+
+/**
+ * HELPER wrapper function to get components of each track in file, if file is a valid GPX
+ * @param fileName name of file to create GPXdoc from
+ * @return JSON array of objects, each object representing one track and its components
+ */
+char *getAllTrackComponentsJSON(char *fileName);
+
+/**
+ * HELPER wrapper function to get components of each route in file, if file is a valid GPX
+ * @param fileName name of file to create GPXdoc from
+ * @return JSON array of objects, each object representing one route and its components
+ */
+char *getAllRoutesComponentsJSON(char *fileName);
+
+/**
  * HELPER convert file to GPX object and return a JSON string representation of it
  * @param filename
  * @return JSON string representation of file
@@ -242,4 +277,3 @@ bool storeTrkOtherData(xmlNode* xmlTrkChild, Track* newTrk);
  * @return boolean value representing whether TrackSeg was parsed correctly - halt traversal process if false
  */
 bool storeTrkSeg(xmlNode* xmlTrkChild, Track* newTrk);
-

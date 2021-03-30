@@ -44,15 +44,27 @@ input[type=submit], button {
 }
 table, th, td {
     border: 1px solid rgb(180, 174, 174);
-    padding: 10px;
+    padding: 6px;
     text-align: center;
 }
-div #FileLogTableDiv {
+table {
     background-color: rgb(232, 239, 241);
+    width: 100%;
 }
-.my-custom-scrollbar {
+th {
+    background-color: #bed5db;
+    top:0;
+    position: sticky;
+    font-weight: lighter;
+}
+.FileLogTableScrollBar {
     position: relative;
-    height: 150px;
+    height: 200px;
+    overflow: auto;
+}
+.GPXViewTableScrollBar {
+    position: relative;
+    height: 200px;
     overflow: auto;
 }
 a {

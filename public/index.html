@@ -20,13 +20,16 @@
 <body>
     <h1 class="w3-panel">GPS Data Viewer</h1>
     
-    <!--FILE LOG PANEL-->
+    <!-----------------
+        FILE LOG PANEL
+    ------------------>
     <div class="w3-panel" id="FileLogPanel">
         <hr>
         <h2>File Log Panel</h2>
         <br>
+
         <!--table should be scrollable-->
-        <div class="table-wrapper-scroll-y my-custom-scrollbar" id="FileLogTableDiv">
+        <div class="table-wrapper-scroll-y FileLogTableScrollBar" id="FileLogTableDiv">
             <table id="FileLogTable">
                 <!--table headers-->
                 <thead>
@@ -34,17 +37,19 @@
                         <th>File name (click to download)</th>
                         <th>Version</th>
                         <th>Creator</th>
-                        <th>Num Waypoints</th>
-                        <th>Num Routes</th>
-                        <th>Num Tracks</th>
+                        <th># of Wpts</th>
+                        <th># of Rtes</th>
+                        <th># of Trks</th>
                     </tr>
                 </thead>
-                <!--every row in tbody contains one file name and its basic info-->
+                <!--Every row in tbody contains one file name and its basic info.
+                Table should also display files created from scratch by the user.-->
                 <tbody></tbody>
             </table>
         </div>
         <br>
-        <!--getting the file and shit-->
+
+        <!--upload file form-->
         <form ref='uploadForm' id='GPXUploadForm' action='/upload' method='post' encType="multipart/form-data">
             <div class="form-group">
                 <input type="file" id="GPXUpload" name="uploadFile" class="btn btn-secondary" accept=".gpx">
@@ -53,26 +58,32 @@
         </form>
     </div>
 
-    <!--GPX VIEW PANEL-->
+    <!-----------------
+        GPX VIEW PANEL
+    ------------------>
     <div class="w3-panel" id = "GPXViewPanel">
         <hr>
+
         <!--dropdown to select GPX file-->
         <label for="GPXViewDropdown">Select GPX file: </label>
-        <select id="GPXViewDropdown">
+        <select id="GPXViewDropdown" onchange="displayGPXFileInfo()">
             <option value=" " selected> </option> <!--file should not be selected by default-->
         </select>
+
         <!--view selected file's contents-->
         <h2>GPX View Panel</h2>
         <br>
         <!--table should be scrollable-->
-        <div class="table-wrapper-scroll-y my-custom-scrollbar" id="GPXViewTableDiv" >
+        <div class="table-wrapper-scroll-y GPXViewTableScrollBar" id="GPXViewTableDiv" >
             <table id="GPXViewTable">
                 <tr>
-                    <th>Component</th> <!--click for more options?? e.g. rename component, view other data-->
+                    <th>Component</th> 
                     <th>Name</th>
-                    <th># of points</th>
+                    <th># of Points</th>
                     <th>Length</th>
                     <th>Loop</th>
+                    <th>Rename Component</th>
+                    <th>View Other Data</th> <!--have a button in each row that creates alert with otherData string-->
                 </tr>
             </table>
         </div>
@@ -80,17 +91,18 @@
         <button id="GPXViewAddRowButton" onclick="AddDummyRow()">Add Dummy Row</button>
     </div>
 
-    <!--ADDITIONAL FUNCTIONALITY/INFO-->
+    <!-----------------
+        MORE INFO PANEL
+    ------------------>
     <div class="w3-panel" id="Additional Functionality">
         <hr>
         <h2>Additional Functionality</h2>
         <br>
     </div>
 
-
-    <a href="simple.gpx" download>simple.gpx</a>
+    <!-- <a href="simple.gpx" download>simple.gpx</a>
     <br>
-    <br>
+    <br> -->
 
     <!--getting GPX file name from user-->
 

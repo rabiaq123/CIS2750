@@ -75,6 +75,8 @@ let GPXParserLib = ffi.Library('./libgpxparser', {
     //if void input type, leave argument list empty
     //listing all wrappers
     'GPXFileToJSON': ['string', ['string']],
+    'getAllRouteComponentsJSON': ['string', ['string']],
+    'getAllTrackComponentsJSON': ['string', ['string']],
 });
 
 /*
@@ -100,19 +102,41 @@ app.get('/getGPXFilesInUploadsDir', function (req, res) {
 
 //return JSON object of GPX file's contents
 app.get('/GPXFileToJSON', function (req, res) {
-    let file = req.query.filename; //grab data passed to server endpoint with 'request'
-    let fileJSONString = GPXParserLib.GPXFileToJSON(file);
+    let file = req.query.fileDir; //grab data passed to server endpoint with 'request'
+    let fileToJSON = GPXParserLib.GPXFileToJSON(file);
+
     //error-handing for invalid GPX file
-    if (fileJSONString == null) {
-        console.log("Error in opening file: " + file);
+    if (fileToJSON == null) {
         res.send({ //object being sent back with 'response'
             doc: null
         });
     } else {
-        let GPXdoc = JSON.parse(fileJSONString); //convert JSON string to object
+        let GPXdoc = JSON.parse(fileToJSON); //convert JSON string to object
         res.send({
             doc: GPXdoc,
-            filename: file
+            filename: req.query.filename
+        });
+    }
+});
+
+//get components of file in JSON string format
+app.get('/getGPXFileComponents', function (req, res) {
+    let file = req.query.fileDir;
+    let routesStringJSON = GPXParserLib.getAllRouteComponentsJSON(file);
+    let tracksStringJSON = GPXParserLib.getAllTrackComponentsJSON(file);
+
+    if (routesStringJSON == null || tracksStringJSON == null) {
+        res.send({
+            routesList: null,
+            tracksList: null
+        });
+    } else {
+        //convert JSON strings to objects
+        let routesListJSON = JSON.parse(routesStringJSON);
+        let tracksListJSON = JSON.parse(tracksStringJSON);    
+        res.send({
+            routesList: routesListJSON,
+            tracksList: tracksListJSON
         });
     }
 });
