@@ -1,6 +1,7 @@
 // Put all onload AJAX calls here, and event listeners
 $(document).ready(function() {
     //on page-load, add data to relevant components of GUI
+    console.log("Site loaded.");
     $.ajax({
         type: 'get',                        //Request type
         dataType: 'json',                   //Data type - we will use JSON for almost everything 
@@ -105,46 +106,76 @@ function displayGPXFileInfo() {
 
 //add all components (routes and tracks) in selected file to GPX View table 
 function addAllComponentsToGPXViewTable(GPXobj) {
+    console.log("Routes List: ", JSON.stringify(GPXobj.routesList));
+    console.log("Tracks List: ", JSON.stringify(GPXobj.tracksList));
+  
     //display all route components
     let counter = 1;
-    for (let routeJSON of GPXobj.routesList) {
-        if (routeJSON.name == "None") routeJSON.name = " ";
+    for (let route of GPXobj.routesList) {
+        if (route.name == "None") route.name = " ";
+        let otherDataRte = JSON.stringify(route.otherData);
+        //add row to table
         $('#GPXViewTable').append(
             "<tr>" +
-                "<td>Route " + counter + "</td>" +          //route number
-                "<td>" + routeJSON.name + "</td>" +         //name of route
-                "<td>" + routeJSON.numPoints + "</td>" +    //number of points
-                "<td>" + routeJSON.len + "m </td>" +        //route length
-                "<td>" + routeJSON.loop + "</td>" +         //is loop (true/false)
+                "<td>Route " + counter + "</td>" +      //route number
+                "<td>" + route.name + "</td>" +         //name of route
+                "<td>" + route.numPoints + "</td>" +    //number of points
+                "<td>" + route.len + "m </td>" +        //route length
+                "<td>" + route.loop + "</td>" +         //is loop (true/false)
+                "<td>" + " " + "</td>" +                //rename component form
+                "<td>" + 
+                    //view other data radio button and display alert if selected
+                    "<input type=\"radio\"" + "name=\"optInfo\"" + "onclick='displayAlert(" + otherDataRte + ")'>" +
+                "</td>" +
             "</tr>"
         );
+        console.log("Route: ", route);
         counter++;
     }
+
     //display all track components
     counter = 1;
-    for (let trackJSON of GPXobj.tracksList) {
-        if (trackJSON.name == "None") trackJSON.name = " ";
+    for (let track of GPXobj.tracksList) {
+        if (track.name == "None") track.name = " ";
+        let otherDataTrk = JSON.stringify(track.otherData);
+        //add row to table
         $('#GPXViewTable').append(
             "<tr>" +
-                "<td>Track " + counter + "</td>" +          //track number
-                "<td>" + trackJSON.name + "</td>" +         //name of track
-                "<td>" + trackJSON.numPoints + "</td>" +    //number of points
-                "<td>" + trackJSON.len + "m </td>" +        //track length
-                "<td>" + trackJSON.loop + "</td>" +         //is loop (true/false)
+                "<td>Track " + counter + "</td>" +      //track number
+                "<td>" + track.name + "</td>" +         //name of track
+                "<td>" + track.numPoints + "</td>" +    //number of points
+                "<td>" + track.len + "m </td>" +        //track length
+                "<td>" + track.loop + "</td>" +         //is loop (true/false)
+                "<td>" + " " + "</td>" +                //rename component form
+                "<td>" +
+                    //view other data radio button and display alert if selected
+                    "<input type=\"radio\"" + "name=\"optInfo\"" + "onclick='displayAlert(" + otherDataTrk + ")'>" +
+                "</td>" +
             "</tr>"
         );
+        console.log("Track: ", track);
         counter++;
     }
 }
 
-function AddDummyRow() {
-    $('#GPXViewTable').append(
-        "<tr>" +
-            "<td>Route 1</td>" +
-            "<td>Name of Route</td>" +
-            "<td>3</td>" +
-            "<td>4</td>" +
-            "<td>FALSE</td>" +
-        "</tr>"
-    );
+//display alert message containing all objects in JSON array (other data objects in route/track)
+function displayAlert(alertMessageObject) {
+    let displayString = "";
+
+    //append name and value attributes for each otherData item to display string
+    let counter = 1;
+    if (alertMessageObject.length != 0) { //check for empty otherData list for route/track
+        for (let alert of alertMessageObject) {
+            if (alert.name != undefined && alert.value != undefined) {
+                displayString = displayString + "Other Data element " + counter + ":\n";
+                displayString = displayString + "name: " + alert.name + "\nvalue: " + alert.value + "\n";
+                if (counter < alertMessageObject.length) displayString = displayString + "\n"; //don't add \n for last object
+            }
+            counter++;
+        }
+    } else {
+        displayString = "Component contains no other data."
+    }
+
+    alert(displayString);
 }

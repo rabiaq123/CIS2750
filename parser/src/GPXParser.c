@@ -30,23 +30,74 @@
 /***A3 functions***/
 
 
-int getNumTrkptsInTrack(const Track *trk) {
-    int numTrkpts = 0;
-    TrackSegment *trkSegPtr;
+char* GPXFileToJSON(char* filename) {
+    GPXdoc *doc = createValidGPXdoc(filename, "./parser/gpx.xsd");
+    if (doc == NULL) return NULL;
 
-    ListIterator iter = createIterator(trk->segments);
-    while ((trkSegPtr = nextElement(&iter)) != NULL) {
-        numTrkpts += getLength(trkSegPtr->waypoints);
-    }
+    char *stringJSON = GPXtoJSON(doc);
+    deleteGPXdoc(doc);
 
-    return numTrkpts;
+    return stringJSON; 
 }
 
 
-char* detailedTrackToJSON(const Track *trk) {
+char *getAllRouteComponentsJSON(char *filename) {
+    GPXdoc *doc = createValidGPXdoc(filename, "./parser/gpx.xsd");
+    if (doc == NULL) return NULL;
+
+    char *routesStringJSON = detailedRouteListToJSON(doc->routes);
+    deleteGPXdoc(doc);
+
+    return routesStringJSON;
+}
+
+
+char *getAllTrackComponentsJSON(char *filename) {
+    GPXdoc *doc = createValidGPXdoc(filename, "./parser/gpx.xsd");
+    if (doc == NULL) return NULL;
+
+    char *tracksStringJSON = detailedTrackListToJSON(doc->tracks);
+    deleteGPXdoc(doc);
+
+    return tracksStringJSON;
+}
+
+
+char *detailedRouteListToJSON(const List *list){
     char *stringJSON = calloc(10000, sizeof(char));
 
-    if (trk == NULL) {
+    if (list == NULL) {
+        strcpy(stringJSON, "[]");
+        stringJSON = realloc(stringJSON, sizeof(char) * (strlen(stringJSON) + 1));
+        return stringJSON; //ptr to statically allocated string e.g. "[]" when returned will be NULL
+    }
+
+    char *rteBuffer;
+    Route *rte;
+    int i = 0;
+
+    sprintf(stringJSON, "[");
+
+    ListIterator iter = createIterator((List*)list);
+    while ((rte = nextElement(&iter)) != NULL) {
+        if (++i >= 2) strcat(stringJSON, ","); //comma shouldn't follow last JSON string
+        rteBuffer = detailedRouteToJSON(rte);
+        strcat(stringJSON, rteBuffer);
+        free(rteBuffer);
+    }
+
+    strcat(stringJSON, "]");
+
+    stringJSON = realloc(stringJSON, sizeof(char) * (strlen(stringJSON) + 1));
+
+    return stringJSON;
+}
+
+
+char* detailedRouteToJSON(const Route *rte) {
+    char *stringJSON = calloc(10000, sizeof(char));
+
+    if (rte == NULL) {
         strcpy(stringJSON, "{}");
         stringJSON = realloc(stringJSON, sizeof(char) * (strlen(stringJSON) + 1));
         return stringJSON; //ptr to statically allocated string e.g. "{}" when returned will be NULL
@@ -58,28 +109,32 @@ char* detailedTrackToJSON(const Track *trk) {
     char isLoop[6] = "true"; //"true" or "false"
 
     //finding name
-    if (trk->name == NULL || strcmp(trk->name, "") == 0) strcpy(name, "None");
-    else strcpy(name, trk->name);
+    if (rte->name == NULL || strcmp(rte->name, "") == 0) strcpy(name, "None");
+    else strcpy(name, rte->name);
     //finding num points
-    sprintf(numPoints, "%d", getNumTrkptsInTrack(trk));
-    //finding track len, rounded to the nearest 10
-    sprintf(len, "%.1f", round10(getTrackLen(trk)));
+    sprintf(numPoints, "%d", getLength(rte->waypoints));
+    //finding route len, rounded to the nearest 10
+    sprintf(len, "%.1f", round10(getRouteLen(rte)));
     //finding loop stat
-    if (!isLoopTrack(trk, 10.0)) strcpy(isLoop, "false");
+    if (!isLoopRoute(rte, 10.0)) strcpy(isLoop, "false");
 
-    //{"name":"track_name",
+    //{"name":"route_name",
     sprintf(stringJSON, "{\"name\":\"%s\",", name);
     //"numPoints":num_points,
     strcat(stringJSON, "\"numPoints\":");
     strcat(stringJSON, numPoints);
     strcat(stringJSON, ",");
-    //"len":track_len,
+    //"len":route_len,
     strcat(stringJSON, "\"len\":");
     strcat(stringJSON, len);
     strcat(stringJSON, ",");
-    //"loop":loopStat}
+    //"loop":loopStat,
     strcat(stringJSON, "\"loop\":");
     strcat(stringJSON, isLoop);
+    strcat(stringJSON, ",");
+    //"otherDataList":[{otherData}, {otherData}, ...]}
+    strcat(stringJSON, "\"otherData\":");
+    strcat(stringJSON, otherDataListToJSON(rte->otherData, NULL));
     strcat(stringJSON, "}");
 
     stringJSON = realloc(stringJSON, sizeof(char) * (strlen(stringJSON) + 1));
@@ -117,36 +172,145 @@ char* detailedTrackListToJSON(const List *list) {
 }
 
 
-char *getAllTrackComponentsJSON(char *filename) {
-    GPXdoc *doc = createValidGPXdoc(filename, "./parser/gpx.xsd");
-    if (doc == NULL) return NULL;
+char* detailedTrackToJSON(const Track *trk) {
+    char *stringJSON = calloc(10000, sizeof(char));
 
-    char *tracksStringJSON = detailedTrackListToJSON(doc->tracks);
-    deleteGPXdoc(doc);
+    if (trk == NULL) {
+        strcpy(stringJSON, "{}");
+        stringJSON = realloc(stringJSON, sizeof(char) * (strlen(stringJSON) + 1));
+        return stringJSON; //ptr to statically allocated string e.g. "{}" when returned will be NULL
+    }
 
-    return tracksStringJSON;
+    char name[200] = {'\0'};
+    char numPoints[10] = {'\0'};
+    char len[10] = {'\0'};
+    char isLoop[6] = "true"; //"true" or "false"
+
+    //finding name
+    if (trk->name == NULL || strcmp(trk->name, "") == 0) strcpy(name, "None");
+    else strcpy(name, trk->name);
+    //finding num points
+    sprintf(numPoints, "%d", getNumTrkptsInTrack(trk));
+    //finding track len, rounded to the nearest 10
+    sprintf(len, "%.1f", round10(getTrackLen(trk)));
+    //finding loop stat
+    if (!isLoopTrack(trk, 10.0)) strcpy(isLoop, "false");
+
+    //{"name":"track_name",
+    sprintf(stringJSON, "{\"name\":\"%s\",", name);
+    //"numPoints":num_points,
+    strcat(stringJSON, "\"numPoints\":");
+    strcat(stringJSON, numPoints);
+    strcat(stringJSON, ",");
+    //"len":track_len,
+    strcat(stringJSON, "\"len\":");
+    strcat(stringJSON, len);
+    strcat(stringJSON, ",");
+    //"loop":loopStat,
+    strcat(stringJSON, "\"loop\":");
+    strcat(stringJSON, isLoop);
+    strcat(stringJSON, ",");
+    //"otherDataList":[{otherData}, {otherData}, ...]}
+    strcat(stringJSON, "\"otherData\":");
+    strcat(stringJSON, otherDataListToJSON(NULL, trk->otherData));
+    strcat(stringJSON, "}");
+
+    stringJSON = realloc(stringJSON, sizeof(char) * (strlen(stringJSON) + 1));
+
+    return stringJSON;
 }
 
 
-char *getAllRouteComponentsJSON(char *filename) {
-    GPXdoc *doc = createValidGPXdoc(filename, "./parser/gpx.xsd");
-    if (doc == NULL) return NULL;
+int getNumTrkptsInTrack(const Track *trk) {
+    int numTrkpts = 0;
+    TrackSegment *trkSegPtr;
 
-    char *routesStringJSON = routeListToJSON(doc->routes);
-    deleteGPXdoc(doc);
+    ListIterator iter = createIterator(trk->segments);
+    while ((trkSegPtr = nextElement(&iter)) != NULL) {
+        numTrkpts += getLength(trkSegPtr->waypoints);
+    }
 
-    return routesStringJSON;
+    return numTrkpts;
 }
 
 
-char* GPXFileToJSON(char* filename) {
-    GPXdoc *doc = createValidGPXdoc(filename, "./parser/gpx.xsd");
-    if (doc == NULL) return NULL;
+char *otherDataListToJSON(List *rteOtherDataList, List *trkOtherDataList) {
+    char *stringJSON = calloc(10000, sizeof(char));
 
-    char *stringJSON = GPXtoJSON(doc);
-    deleteGPXdoc(doc);
+    List *list;
+    if (rteOtherDataList != NULL) list = rteOtherDataList;
+    else if (trkOtherDataList != NULL) list = trkOtherDataList;
 
-    return stringJSON; 
+    if (getLength(list) == 0) { //no other data in route/track
+        strcpy(stringJSON, "[]");
+        stringJSON = realloc(stringJSON, sizeof(char) * (strlen(stringJSON) + 1));
+        return stringJSON; //ptr to statically allocated string e.g. "[]" when returned will be NULL
+    }
+
+    char *otherDataBuffer;
+    GPXData *otherData;
+    int i = 0;
+
+    sprintf(stringJSON, "[");
+    ListIterator iter = createIterator((List*)list);
+    while ((otherData = nextElement(&iter)) != NULL) {
+        if (++i >= 2) strcat(stringJSON, ","); //comma shouldn't follow last JSON string
+        otherDataBuffer = otherDataElemToJSON(otherData);
+        strcat(stringJSON, otherDataBuffer);
+        free(otherDataBuffer);
+    }
+    strcat(stringJSON, "]");
+
+    stringJSON = realloc(stringJSON, sizeof(char) * (strlen(stringJSON) + 1));
+
+    return stringJSON;
+}
+
+
+char *otherDataElemToJSON(GPXData *otherData) {
+    char *stringJSON = calloc(10000, sizeof(char));
+
+    char name[200] = {'\0'};
+    char value[200] = {'\0'};
+
+    //finding name
+    if (otherData->name == NULL || strcmp(otherData->name, "") == 0) strcpy(name, "None");
+    else strcpy(name, otherData->name);
+    //finding value
+    if (otherData->value == NULL || strcmp(otherData->value, "") == 0) strcpy(value, "None");
+    else strcpy(value, otherData->value);
+    trimLeadingWhiteSpace(value);
+
+    //{"name":"otherData_name",
+    sprintf(stringJSON, "{\"name\":\"%s\",", name);
+    //"value":"otherData_value"}
+    strcat(stringJSON, "\"value\":");
+    strcat(stringJSON, "\"");
+    strcat(stringJSON, value);
+    strcat(stringJSON, "\"");
+    strcat(stringJSON, "}");
+
+    stringJSON = realloc(stringJSON, sizeof(char) * (strlen(stringJSON) + 1));
+
+    return stringJSON;
+}
+
+
+void trimLeadingWhiteSpace(char string[200]) {
+    int  i,j;
+ 
+	for(i = 0; string[i] == ' '|| string[i] == '\t' || string[i] == '\n'; i++);
+
+    for (j = 0; string[i]; i++) {
+        string[j++] = string[i];
+    }
+
+    string[j] = '\0';
+    for (i = 0; string[i] != '\0'; i++) {
+        if (string[i] != ' ' && string[i] != '\t' && string[i] != '\n') j = i;
+	}
+
+    string[j + 1] = '\0';
 }
 
 
@@ -896,7 +1060,6 @@ char* trackListToJSON(const List *list) {
     int i = 0;
 
     sprintf(stringJSON, "[");
-
     ListIterator iter = createIterator((List*)list);
     while ((trk = nextElement(&iter)) != NULL) {
         if (++i >= 2) strcat(stringJSON, ","); //comma shouldn't follow last JSON string
@@ -904,7 +1067,6 @@ char* trackListToJSON(const List *list) {
         strcat(stringJSON, trkBuffer);
         free(trkBuffer);
     }
-
     strcat(stringJSON, "]");
 
     stringJSON = realloc(stringJSON, sizeof(char) * (strlen(stringJSON) + 1));

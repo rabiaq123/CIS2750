@@ -125,6 +125,7 @@ app.get('/getGPXFileComponents', function (req, res) {
     let routesStringJSON = GPXParserLib.getAllRouteComponentsJSON(file);
     let tracksStringJSON = GPXParserLib.getAllTrackComponentsJSON(file);
 
+    //error-handling for invalid GPX file (not a well-formed XML or does not follow GPX specifications)
     if (routesStringJSON == null || tracksStringJSON == null) {
         res.send({
             routesList: null,

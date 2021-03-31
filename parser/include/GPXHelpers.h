@@ -15,6 +15,41 @@
 /**********A3 helper functions**********/
 
 /**
+ * HELPER trim leading and trailing whitespace in string
+ * @param string string to be modified to remove trailing and leading whitespace
+ */
+void trimLeadingWhiteSpace(char string[]);
+
+    /**
+ * HELPER get JSON string of one otherData node in otherData list of route/track
+ * @param otherData otherData node to be parsed into JSON string
+ * @return JSON string representing given otherData elem
+ */
+    char *otherDataElemToJSON(GPXData *otherData);
+
+/**
+ * HELPER get JSON string of all otherData in route/track
+ * @param rteOtherDataList pointer to otherData list of route
+ * @param trkOtherDataList pointer to otherData list of track
+ * @return JSON string representing all otherData nodes in otherData list of track/route
+ */
+char *otherDataListToJSON(List *rteOtherDataList, List *trkOtherDataList);
+
+/**
+ * HELPER get JSON string of one track including the number of points (rtepts) for the route and its otherData
+ * @param rte route to be parsed into JSON string
+ * @return JSON string representing given route
+ */
+char* detailedRouteToJSON(const Route *rte);
+
+/**
+ * HELPER get JSON string of all routes including the number of points (rtepts) for each route and its otherData
+ * @param list pointer to a List struct
+ * @return JSON string representing all routes in file
+ */
+char *detailedRouteListToJSON(const List *list);
+
+/**
  * HELPER get number of trkpts in track (from all track segments)
  * @param trk track to find num trkpts for
  * @return num trkpts in track
@@ -22,7 +57,7 @@
 int getNumTrkptsInTrack(const Track *trk);
 
 /**
- * HELPER get JSON string of one track including the number of points (trkpts) for the track
+ * HELPER get JSON string of one track including the number of points (trkpts) for the track and its otherData
  * @param trk track to be parsed into JSON string
  * @return JSON string representing given track
  */
