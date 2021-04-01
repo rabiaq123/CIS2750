@@ -59,14 +59,20 @@ th {
 }
 .FileLogTableScrollBar {
     position: relative;
-    height: 200px;
+    max-height: 200px;
     overflow: auto;
 }
 .GPXViewTableScrollBar {
     position: relative;
-    height: 200px;
+    max-height: 200px;
     overflow: auto;
 }
 a {
     color:rgb(101, 165, 187);
+}
+#FindPathBtwnTable {
+    width:50%;
+}
+#addRouteForm {
+    width: 50%;
 }

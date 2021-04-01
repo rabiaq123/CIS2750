@@ -10,7 +10,7 @@
 int main() {
     GPXdoc* doc = NULL;
     char* GPXstring;
-    char file[] = "/home/undergrad/0/rqureshi/Desktop/W21/CIS2750/cis2750w21_project/uploads/Memorial_Forest_Loop(1rt_0trk_0seg_430m).gpx";
+    char file[] = "/home/undergrad/0/rqureshi/Desktop/W21/CIS2750/cis2750w21_project/uploads/simple.gpx";
     char schema[] = "/home/undergrad/0/rqureshi/Desktop/W21/CIS2750/cis2750w21_project/parser/gpx.xsd";
 
     //attempt to parse XML file
@@ -24,6 +24,12 @@ int main() {
     if (!validateGPXDoc(doc, schema)) {
         printf("invalid GPX\n");
     }
+
+    printf("Printing route list to JSON\n");
+    printf(detailedRouteListToJSON((doc->routes)));
+    printf("\nPrinting track list to JSON\n");
+    printf(detailedTrackListToJSON((doc->tracks)));
+
     writeGPXdoc(doc, "/home/undergrad/0/rqureshi/Desktop/W21/CIS2750/SampleGPXfiles/doc.gpx");
 
     //int len = numRoutesWithLength(doc, 4220.00, 10.00);
@@ -40,14 +46,13 @@ int main() {
     */
 
     //find Route children nodes of root node
-    Route *rtePtr;
-    ListIterator iter = createIterator(doc->routes);
-    while ((rtePtr = nextElement(&iter)) != NULL) {
-        if (routeToJSON(rtePtr) != NULL) {
-
-        printf(routeToJSON(rtePtr));
-        }
-    }
+    // Route *rtePtr;
+    // ListIterator iter = createIterator(doc->routes);
+    // while ((rtePtr = nextElement(&iter)) != NULL) {
+    //     if (routeToJSON(rtePtr) != NULL) {
+    //         printf(routeToJSON(rtePtr));
+    //     }
+    // }
     printf("\n");
 
     free(GPXstring);

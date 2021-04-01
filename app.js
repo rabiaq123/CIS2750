@@ -77,6 +77,7 @@ let GPXParserLib = ffi.Library('./libgpxparser', {
     'GPXFileToJSON': ['string', ['string']],
     'getAllRouteComponentsJSON': ['string', ['string']],
     'getAllTrackComponentsJSON': ['string', ['string']],
+    'updateComponentName': ['bool', ['string', 'int', 'int', 'string']]
 });
 
 /*
@@ -137,8 +138,28 @@ app.get('/getGPXFileComponents', function (req, res) {
         let tracksListJSON = JSON.parse(tracksStringJSON);    
         res.send({
             routesList: routesListJSON,
-            tracksList: tracksListJSON
+            tracksList: tracksListJSON,
         });
+    }
+});
+
+//update route/track name in file and in GPX View table
+app.get('/updateComponent', function (req, res) {
+    let file = req.query.fileDir;
+    let compFlag = req.query.componentFlag;
+    let index = req.query.index;
+    let newName = req.query.name;
+    let nameChanged = GPXParserLib.updateComponentName(file, compFlag, index, newName);
+
+    //error-handling for error in updating component name 
+    if (nameChanged == false) {
+        res.send({
+            isUpdated: false
+        });
+    } else {
+        res.send({
+            isUpdated: true
+        })
     }
 });
 

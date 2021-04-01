@@ -30,6 +30,59 @@
 /***A3 functions***/
 
 
+bool updateComponentName(char *fileDir, int compFlag, int index, char *newName) {
+    bool isValidGPXdoc = false, isUpdated = false;
+    GPXdoc *doc;
+    
+    doc = createValidGPXdoc(fileDir, "./parser/gpx.xsd");
+
+    //update the name of the component in the GPX doc struct
+    if (compFlag == 1) doc = updateRouteName(doc, newName, index);
+    else doc = updateTrackName(doc, newName, index);
+
+    //validate GPX doc struct and write to file
+    isValidGPXdoc = validateGPXDoc(doc, "./parser/gpx.xsd");
+    if (isValidGPXdoc) isUpdated = writeGPXdoc(doc, fileDir);
+    else isUpdated = false;
+
+    deleteGPXdoc(doc);
+
+    return isUpdated;
+}
+
+
+GPXdoc *updateRouteName(GPXdoc *doc, char *newName, int index) {
+    GPXdoc *updatedDoc = doc;
+    Route *rte;
+    int i = 0;
+
+    //store new name into name of route at given index
+    ListIterator iter = createIterator(updatedDoc->routes);
+    while ((rte = nextElement(&iter)) != NULL) {
+        if (i == index) strcpy(rte->name, newName);
+        i++;
+    }
+
+    return updatedDoc;
+}
+
+
+GPXdoc *updateTrackName(GPXdoc *doc, char *newName, int index) {
+    GPXdoc *updatedDoc = doc;
+    Track *trk;
+    int i = 0;
+
+    //store new name into name of track at given index
+    ListIterator iter = createIterator(updatedDoc->tracks);
+    while ((trk = nextElement(&iter)) != NULL) {
+        if (i == index) strcpy(trk->name, newName);
+        i++;
+    }
+
+    return updatedDoc;
+}
+
+
 char* GPXFileToJSON(char* filename) {
     GPXdoc *doc = createValidGPXdoc(filename, "./parser/gpx.xsd");
     if (doc == NULL) return NULL;

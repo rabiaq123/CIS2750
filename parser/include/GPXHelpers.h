@@ -15,17 +15,45 @@
 /**********A3 helper functions**********/
 
 /**
+ * HELPER update attempt to update track component name
+ * @param doc GPXdoc struct to be updated and later re-written into current file
+ * @param newName new name of component
+ * @param index index of component to be updated in array of tracks in file
+ * @return updated GPXdoc struct to be written into current file
+ */
+GPXdoc *updateTrackName(GPXdoc *doc, char *newName, int index);
+
+/**
+ * HELPER update attempt to update route component name
+ * @param doc GPXdoc struct to be updated and later re-written into current file
+ * @param newName new name of component
+ * @param index index of component to be updated in array of routes in file
+ * @return updated GPXdoc struct to be written into current file
+ */
+GPXdoc *updateRouteName(GPXdoc *doc, char *newName, int index);
+
+/**
+ * HELPER wrapper function to update component name chosen in GPX View table textbox by user
+ * @param fileDir file location in which change needs to be made
+ * @param compFlag component being changed is a Route if == 1 and Track if == 2
+ * @param index index of component to be updated in array of routes/tracks in file
+ * @param newName new name of component
+ * @return boolean representing whether component name was successfully updated
+ */
+bool updateComponentName(char *fileDir, int compFlag, int index, char *newName);
+
+/**
  * HELPER trim leading and trailing whitespace in string
  * @param string string to be modified to remove trailing and leading whitespace
  */
 void trimLeadingWhiteSpace(char string[]);
 
-    /**
+/**
  * HELPER get JSON string of one otherData node in otherData list of route/track
  * @param otherData otherData node to be parsed into JSON string
  * @return JSON string representing given otherData elem
  */
-    char *otherDataElemToJSON(GPXData *otherData);
+char *otherDataElemToJSON(GPXData *otherData);
 
 /**
  * HELPER get JSON string of all otherData in route/track
