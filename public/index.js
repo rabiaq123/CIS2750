@@ -7,21 +7,27 @@ $(document).ready(function() {
         url: '/getGPXFilesInUploadsDir',    //The server endpoint we are connecting to
         data: {},                           //Data we are sending to the server, currently an object with no instance vars
         success: function(data) { //the parameter "data" contains the data received from the server
-            //write to console to show successful page load
             console.log("Page loaded successfully.");
             //load files on the server into File Log and dropdowns
             let GPXFileNamesArr = data.filenames;
-            //console.log("Files in uploads/ directory: " + GPXFileNamesArr);
             addUploadFilesToFileLog(GPXFileNamesArr);
         },
         fail: function(error) {
-            // Non-200 return, do something with error
             console.log(error); 
         }
     });
 
     //GPX View table should be empty on page load
     $('#GPXViewTable').append("<tr>" + "<td colspan='8'>No file selected</td>" + "</tr>");
+
+    //create GPX form submit button
+    document.getElementById('createGPXButton').onclick = function(e) {
+        e.preventDefault();
+        let filename = $('#entryBoxGPXName').val();
+        let version = $('#entryBoxGPXVersion').val();
+        let creator = $('#entryBoxGPXCreator').val();
+        createNewGPX(filename, version, creator);
+    };
 });
 
 //add files in upload directory to File Log table
@@ -52,16 +58,17 @@ function convertFileToJSON(filename) {
                 console.log("GPX file loaded in successfully: " + data.filename);
                 addFileToFileLog(data); //add file to File Log Panel table
                 $('#GPXViewDropdown').append(new Option(data.filename, data.filename)); //add file to GPX View dropdown
+                $('#AddRouteDropdown').append(new Option(data.filename, data.filename)); //add file to Add Route dropdown
             } else {
                 console.log("Error in loading file: " + filename);
             }
         },
         fail: function (error) {
-            // Non-200 return, do something with error
             console.log(error);
         }
     });
 }
+
 
 //add one file to a row in the File Log table
 function addFileToFileLog(GPXobj) { //data passed in is object with instance vars of filename and doc object
@@ -77,6 +84,7 @@ function addFileToFileLog(GPXobj) { //data passed in is object with instance var
     );
 }
 
+
 //display GPX file info in GPX View Panel
 function displayGPXFileInfo() {
     let chosenFile = $('#GPXViewDropdown option:selected').val();
@@ -89,7 +97,6 @@ function displayGPXFileInfo() {
         },
         success: function (data) { //the parameter "data" contains the data received from the server
             if (data.routesList != null && data.tracksList != null) {
-                //write to console to show successful loading of components into table
                 console.log("Components added successfully to GPX View Panel for file: " + chosenFile);
                 addAllComponentsToGPXViewTable(data);
             } else {
@@ -97,7 +104,6 @@ function displayGPXFileInfo() {
             }
         },
         fail: function (error) {
-            // Non-200 return, do something with error
             console.log(error);
         }
     });
@@ -108,6 +114,7 @@ function displayGPXFileInfo() {
         $('#GPXViewTable').append("<tr>" + "<td colspan='8'>No file selected</td>" + "</tr>");
     }
 }
+
 
 //add all components (routes and tracks) in selected file to GPX View table 
 function addAllComponentsToGPXViewTable(GPXobj) {
@@ -192,41 +199,6 @@ function addAllComponentsToGPXViewTable(GPXobj) {
     }
 }
 
-//connect to server endpoint to update component (route/track) name
-//flag is component type (1 = Route), counter is component number, and name is the new component name
-function updateComponent(flag, counter) {
-    let name;
-    if (flag == 1) name = $('#entryBox' + 'R' + counter).val();
-    else name = $('#entryBox' + 'T' + counter).val();
-    let chosenFile = $('#GPXViewDropdown option:selected').val();
-    let index = counter - 1;
-    console.log("UPDATE Component", flag, " ", counter, " ", name, " ");
-
-    $.ajax({
-        type: 'get',                   //Request type
-        dataType: 'json',               //Data type - we will use JSON for almost everything 
-        url: '/updateComponent',        //The server endpoint we are connecting to
-        data: {                         //Data we are sending to the server, currently an object with no instance vars
-            fileDir: "./uploads/" + chosenFile,
-            componentFlag: flag,
-            index: index,
-            name: name
-        },
-        success: function (data) { //the parameter "data" contains the data received from the server
-            if (data.isUpdated == true) {
-                //reload page to show changes in file contents
-//                location.reload();
-                console.log("Successfully updated component name and saved to disk.");
-            } else {
-                console.log("Error updating component name to: " + chosenFile);
-            }
-        },
-        fail: function (error) {
-            // Non-200 return, do something with error
-            console.log(error);
-        }
-    });
-}
 
 //display alert message containing all objects in JSON array (other data objects in route/track)
 function displayAlert(alertMessageObject) {
@@ -248,4 +220,75 @@ function displayAlert(alertMessageObject) {
     }
 
     alert(displayString);
+}
+
+
+//connect to server endpoint to update component (route/track) name
+//flag is component type (1 = Route), counter is component number, and name is the new component name
+function updateComponent(flag, counter) {
+    let name;
+    if (flag == 1) name = $('#entryBox' + 'R' + counter).val();
+    else name = $('#entryBox' + 'T' + counter).val();
+    let chosenFile = $('#GPXViewDropdown option:selected').val();
+    let index = counter - 1;
+    //console.log("UPDATE Component", flag, " ", index, " ", name, " ");
+
+    $.ajax({
+        type: 'get',                   //Request type
+        dataType: 'json',               //Data type - we will use JSON for almost everything 
+        url: '/updateComponent',        //The server endpoint we are connecting to
+        data: {                         //Data we are sending to the server, currently an object with no instance vars
+            fileDir: "./uploads/" + chosenFile,
+            componentFlag: flag,
+            index: index,
+            name: name
+        },
+        success: function (data) { //the parameter "data" contains the data received from the server
+            if (data.isUpdated == true) {            
+                console.log("Successfully updated component name and saved to disk.");
+                location.reload(); //reload page to show changes in file contents
+            } else {
+                console.log("Error occurred while attempting to rename component to: " + name);
+            }
+        },
+        fail: function (error) {
+            // Non-200 return, do something with error
+            console.log(error);
+        }
+    });
+}
+
+
+//send user input for new GPX file to server
+function createNewGPX(filename, version, creator) {
+    //version must be a numeric value
+    if (isNaN(version)) {
+        alert("Please enter a double (numeric) value for your GPX file's version attribute.");
+        return;
+    }
+
+    if (version.length == 0) version = "1.1"; //set to default value if not specified by user
+
+    $.ajax({
+        type: 'get',                    //Request type
+        dataType: 'json',               //Data type - we will use JSON for almost everything 
+        url: '/createNewGPX',           //The server endpoint we are connecting to
+        data: {                         //Data we are sending to the server, currently an object with no instance vars
+            fileDir: "./uploads/" + filename,
+            version: version,
+            creator: creator
+        },
+        success: function (data) { //the parameter "data" contains the data received from the server
+            if (data.isCreated == true) {
+                console.log("Successfully created GPX file and saved to disk.");
+                location.reload(); //reload page to show changes in file contents
+            } else {
+                alert("Error occurred during GPX file creation; " + filename + " may already exist.");
+            }
+        },
+        fail: function (error) {
+            // Non-200 return, do something with error
+            console.log(error);
+        }
+    });
 }

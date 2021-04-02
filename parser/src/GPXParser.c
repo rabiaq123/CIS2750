@@ -8,6 +8,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <math.h>
+#include <sys/stat.h>
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 #include <libxml/xmlschemastypes.h>
@@ -30,11 +31,33 @@
 /***A3 functions***/
 
 
+bool createNewGPX(char *filename, double version, char *creator, int creatorLen) {
+    //if file exists already, do not create GPX file with same name (do not overwrite)
+    struct stat buffer;
+    if (stat(filename, &buffer) == 0) return false;
+
+    GPXdoc *doc = malloc(sizeof(GPXdoc));
+    doc->creator = calloc((creatorLen) + 1, sizeof(char)); //including NULL terminator
+
+    strcpy(doc->namespace, "http://www.topografix.com/GPX/1/1");
+    doc->version = version;
+    strcpy(doc->creator, creator);
+
+    initializeReqLists(doc);
+
+    if (!validateGPXDoc(doc, "./parser/gpx.xsd")) return false;
+    if (!writeGPXdoc(doc, filename)) return false;
+
+    return true;
+}
+
+
 bool updateComponentName(char *fileDir, int compFlag, int index, char *newName) {
     bool isValidGPXdoc = false, isUpdated = false;
     GPXdoc *doc;
-    
+
     doc = createValidGPXdoc(fileDir, "./parser/gpx.xsd");
+    //printf("in updateCompName: %s %d %d %s\n", fileDir, compFlag, index, newName);
 
     //update the name of the component in the GPX doc struct
     if (compFlag == 1) doc = updateRouteName(doc, newName, index);
@@ -42,8 +65,14 @@ bool updateComponentName(char *fileDir, int compFlag, int index, char *newName) 
 
     //validate GPX doc struct and write to file
     isValidGPXdoc = validateGPXDoc(doc, "./parser/gpx.xsd");
-    if (isValidGPXdoc) isUpdated = writeGPXdoc(doc, fileDir);
-    else isUpdated = false;
+    if (isValidGPXdoc) {
+        //if (remove(fileDir) == 0) { //delete the file
+            isUpdated = writeGPXdoc(doc, fileDir);
+            printf("isvalid\n");
+        //}
+    } else {
+        printf("isInvalid\n");
+    }
 
     deleteGPXdoc(doc);
 
@@ -76,6 +105,7 @@ GPXdoc *updateTrackName(GPXdoc *doc, char *newName, int index) {
     ListIterator iter = createIterator(updatedDoc->tracks);
     while ((trk = nextElement(&iter)) != NULL) {
         if (i == index) strcpy(trk->name, newName);
+        printf("track name: %s\n", trk->name);
         i++;
     }
 
@@ -1151,22 +1181,32 @@ char* GPXtoJSON(const GPXdoc* gpx) {
 
 
 void addWaypoint(Route *rt, Waypoint *wpt) {
+    if (rt == NULL || wpt == NULL) return;
+
     return;
 }
 
 void addRoute(GPXdoc *doc, Route *rte) {
+    if (doc == NULL || rte == NULL) return;
+
     return;
 }
 
 GPXdoc* JSONtoGPX(const char* gpxString) {
+    if (gpxString == NULL) return NULL;
+
     return NULL;
 }
 
 Waypoint* JSONtoWaypoint(const char* gpxString) {
+    if (gpxString == NULL) return NULL;
+
     return NULL;
 }
 
 Route *JSONtoRoute(const char *gpxString) {
+    if (gpxString == NULL) return NULL;
+
     return NULL;
 }
 

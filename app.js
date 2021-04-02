@@ -77,7 +77,8 @@ let GPXParserLib = ffi.Library('./libgpxparser', {
     'GPXFileToJSON': ['string', ['string']],
     'getAllRouteComponentsJSON': ['string', ['string']],
     'getAllTrackComponentsJSON': ['string', ['string']],
-    'updateComponentName': ['bool', ['string', 'int', 'int', 'string']]
+    'updateComponentName': ['bool', ['string', 'int', 'int', 'string']],
+    'createNewGPX': ['bool', ['string','double', 'string', 'int']]
 });
 
 /*
@@ -86,6 +87,7 @@ The below functions are routes.
 In these callback functions, req is the data we're passing into this function and 
 res is the data we're sending back.
 */
+
 
 //send array of filenames in uploads directory
 app.get('/getGPXFilesInUploadsDir', function (req, res) {
@@ -100,6 +102,7 @@ app.get('/getGPXFilesInUploadsDir', function (req, res) {
         });
     });
 });
+
 
 //return JSON object of GPX file's contents
 app.get('/GPXFileToJSON', function (req, res) {
@@ -119,6 +122,7 @@ app.get('/GPXFileToJSON', function (req, res) {
         });
     }
 });
+
 
 //get components of file in JSON string format
 app.get('/getGPXFileComponents', function (req, res) {
@@ -143,6 +147,7 @@ app.get('/getGPXFileComponents', function (req, res) {
     }
 });
 
+
 //update route/track name in file and in GPX View table
 app.get('/updateComponent', function (req, res) {
     let file = req.query.fileDir;
@@ -163,6 +168,20 @@ app.get('/updateComponent', function (req, res) {
     }
 });
 
+
+//create GPX file
+app.get('/createNewGPX', function (req, res) {
+    let fileDir = req.query.fileDir;
+    let version = req.query.version;
+    let creator = req.query.creator;
+    let creatorLen = creator.length;
+    let isCreated = GPXParserLib.createNewGPX(fileDir, version, creator, creatorLen);
+
+    //return whether GPX file was successfully created
+    res.send({
+        isCreated: isCreated
+    });
+});
 
 app.listen(portNum);
 console.log('Running app at localhost: ' + portNum);
