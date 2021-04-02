@@ -263,7 +263,7 @@ function updateComponent(flag, counter) {
         success: function (data) { //the parameter "data" contains the data received from the server
             if (data.isUpdated == true) {            
                 console.log("Successfully updated component name and saved to disk.");
-                setTimeout(function() { location.reload() }, 3000); //reload page (with 3s delay) to show changes in file contents
+                setTimeout(function() { location.reload() }, 2000); //reload page (with 3s delay) to show changes in file contents
             } else {
                 console.log("Error occurred while attempting to rename component to: " + name);
             }
@@ -289,7 +289,7 @@ function createNewGPX(filename, creator) {
         success: function (data) { //the parameter "data" contains the data received from the server
             if (data.isCreated == true) {
                 console.log("Successfully created GPX file '" + filename + "' and saved to disk.");
-                setTimeout(function() { location.reload() }, 3000); //reload page (with 3s delay) to show changes in file contents
+                setTimeout(function() { location.reload() }, 2000); //reload page (with 3s delay) to show changes in file contents
             } else {
                 if (filename.length != 0 && creator.length != 0) {
                     alert("Error occurred during GPX file creation.\n" +
@@ -308,6 +308,12 @@ function createNewGPX(filename, creator) {
 
 //add route to GPX file
 function addRouteToGPX(wpt1Lat, wpt1Lon, wpt2Lat, wpt2Lon) {
+    if (wpt1Lat < -90 || wpt1Lat > 90 || wpt2Lat < -90 || wpt2Lat > 90 ||
+        wpt1Lon < -180 || wpt1Lon >  180 || wpt2Lon < -180 || wpt2Lon > 180) {
+        alert("Invalid Input: Latitude must be within -90 to 90 and\nlongitude must be within -180 to 180.");
+        return;
+    }
+
     let chosenFile = $('#AddRouteDropdown option:selected').val();
     $.ajax({
         type: 'get',                    //Request type
@@ -323,7 +329,7 @@ function addRouteToGPX(wpt1Lat, wpt1Lon, wpt2Lat, wpt2Lon) {
         success: function (data) { //the parameter "data" contains the data received from the server
             if (data.isAdded == 1) {
                 console.log("Route successfully added to GPX file: " + chosenFile);
-                setTimeout(function() { location.reload() }, 3000); //reload page (with 3s delay) to show changes in file contents
+                setTimeout(function() { location.reload() }, 2000); //reload page (with 3s delay) to show changes in file contents
             } else {
                 console.log("Error in adding new route to GPX file: " + chosenFile);
             }
