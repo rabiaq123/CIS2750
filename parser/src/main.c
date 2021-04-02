@@ -9,53 +9,21 @@
 
 int main() {
     GPXdoc* doc = NULL;
-    char* GPXstring;
-    char file[] = "/home/undergrad/0/rqureshi/Desktop/W21/CIS2750/cis2750w21_project/uploads/simple.gpx";
-    char schema[] = "/home/undergrad/0/rqureshi/Desktop/W21/CIS2750/cis2750w21_project/parser/gpx.xsd";
+    // char* GPXstring;
+    // char file[] = "/home/undergrad/0/rqureshi/Desktop/W21/CIS2750/cis2750w21_project/uploads/simple.gpx";
+    // char schema[] = "/home/undergrad/0/rqureshi/Desktop/W21/CIS2750/cis2750w21_project/parser/gpx.xsd";
 
-    //attempt to parse XML file
-    doc = createValidGPXdoc(file, schema);
+    char creator[6] = {'\0'};
+    strcpy(creator, "rabia");
+    char filename[30] = {'\0'};
+    strcpy(filename, "/uploads/thingsss.gpx");
+    int creatorLen = strlen(creator);
 
-    if (doc == NULL) { //error-checking
-        printf("Error: could not parse file %s\n", file);
-        return 0;
-    }
+    if (!createNewGPX(filename, creator, creatorLen)) printf("WRONG WRONG WRONG\n");
 
-    if (!validateGPXDoc(doc, schema)) {
-        printf("invalid GPX\n");
-    }
-
-    printf("Printing route list to JSON\n");
-    printf(detailedRouteListToJSON((doc->routes)));
-    printf("\nPrinting track list to JSON\n");
-    printf(detailedTrackListToJSON((doc->tracks)));
-
-    writeGPXdoc(doc, "/home/undergrad/0/rqureshi/Desktop/W21/CIS2750/SampleGPXfiles/doc.gpx");
-
-    //int len = numRoutesWithLength(doc, 4220.00, 10.00);
-    //printf("1.\nin main NUMROUTESWITHLENGTH: %d\n", numRoutesWithLength(doc, 1960.00, 10.00));
-    //printf("2.\nin main NUMROUTESWITHLENGTH: %d\n", numRoutesWithLength(doc, 4220.00, 10.00));
-    //printf("3.\nin main NUMROUTESWITHLENGTH: %d\n", numRoutesWithLength(doc, 200.00, 10.00));
-
-    GPXstring = GPXdocToString(doc);
-    /*
-    printf(GPXstring);
-    printf("file is: %s\n", file);
-    printf("getNumWaypoints: %d, \ngetNumRoutes: %d, \ngetNumTracks: %d, \ngetNumSegments: %d, \ngetNumGPXData: %d\n",
-            getNumWaypoints(doc), getNumRoutes(doc), getNumTracks(doc), getNumSegments(doc), getNumGPXData(doc));
-    */
-
-    //find Route children nodes of root node
-    // Route *rtePtr;
-    // ListIterator iter = createIterator(doc->routes);
-    // while ((rtePtr = nextElement(&iter)) != NULL) {
-    //     if (routeToJSON(rtePtr) != NULL) {
-    //         printf(routeToJSON(rtePtr));
-    //     }
-    // }
     printf("\n");
 
-    free(GPXstring);
+    // free(GPXstring);
     deleteGPXdoc(doc);
     doc = NULL;
 

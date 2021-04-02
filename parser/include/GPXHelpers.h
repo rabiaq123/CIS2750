@@ -15,6 +15,12 @@
 /**********A3 helper functions**********/
 
 /**
+ * HELPER populate newly created empty GPX doc with (two - my choice of amount) new routes
+ * @param doc GPXdoc to put new routes in
+ */ 
+void addNewRtesToCreatedGPX(GPXdoc *doc);
+
+/**
  * HELPER create new GPX file from scratch, without reading in a GPX file
  * @param filename name of new GPX file, entered by user
  * @param creator creator user enters

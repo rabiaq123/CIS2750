@@ -46,6 +46,7 @@ bool createNewGPX(char *filename, char *creator, int creatorLen) {
     strcpy(doc->creator, creator);
 
     initializeReqLists(doc);
+    addNewRtesToCreatedGPX(doc);
 
     if (!validateGPXDoc(doc, "./parser/gpx.xsd")) return false;
     if (!writeGPXdoc(doc, filename)) return false; //save to disk
@@ -53,6 +54,59 @@ bool createNewGPX(char *filename, char *creator, int creatorLen) {
     deleteGPXdoc(doc);
 
     return true;
+}
+
+
+void addNewRtesToCreatedGPX(GPXdoc *doc) {
+    Route *rte1 = malloc(sizeof(Route));
+    Waypoint *wpt1Rte1 = malloc(sizeof(Waypoint));
+    Waypoint *wpt2Rte1 = malloc(sizeof(Waypoint));
+    Route *rte2 = malloc(sizeof(Route));
+    Waypoint *wpt1Rte2 = malloc(sizeof(Waypoint));
+    Waypoint *wpt2Rte2 = malloc(sizeof(Waypoint));
+
+    //initialize parts of Route struct that are required to be initialized
+    //route 1
+    rte1->name = calloc(300, sizeof(char));
+    rte1->waypoints = initializeList(&waypointToString, &deleteWaypoint, &compareWaypoints);
+    rte1->otherData = initializeList(&gpxDataToString, &deleteGpxData, &compareGpxData);
+    //route 2
+    rte2->name = calloc(300, sizeof(char));
+    rte2->waypoints = initializeList(&waypointToString, &deleteWaypoint, &compareWaypoints);
+    rte2->otherData = initializeList(&gpxDataToString, &deleteGpxData, &compareGpxData);
+
+    //initialize parts of the Waypoint struct that are required to be initialized
+    //waypoint 1 route 1
+    wpt1Rte1->name = calloc(300, sizeof(char));
+    wpt1Rte1->otherData = initializeList(&gpxDataToString, &deleteGpxData, &compareGpxData);
+    wpt1Rte1->latitude = 43.537299;
+    wpt1Rte1->longitude = 43.537299;
+    //waypoint 2 route 1
+    wpt2Rte1->name = calloc(300, sizeof(char));
+    wpt2Rte1->otherData = initializeList(&gpxDataToString, &deleteGpxData, &compareGpxData);
+    wpt2Rte1->latitude = 43.537299;
+    wpt2Rte1->longitude = 43.537299;
+    //waypoint 1 route 2
+    wpt1Rte2->name = calloc(300, sizeof(char));
+    wpt1Rte2->otherData = initializeList(&gpxDataToString, &deleteGpxData, &compareGpxData);
+    wpt1Rte2->latitude = 43.537299;
+    wpt1Rte2->longitude = 43.537299;
+    //waypoint 2 route 2
+    wpt2Rte2->name = calloc(300, sizeof(char));
+    wpt2Rte2->otherData = initializeList(&gpxDataToString, &deleteGpxData, &compareGpxData);
+    wpt2Rte2->latitude = 43.537299;
+    wpt2Rte2->longitude = 43.537299;
+
+    //adding two waypoints to route 1's list
+    addWaypoint(rte1, wpt1Rte1);
+    addWaypoint(rte1, wpt2Rte1);
+    //adding two waypoints to route 2's list
+    addWaypoint(rte2, wpt1Rte2);
+    addWaypoint(rte2, wpt2Rte2);
+
+    //insert routes at the back of newly created Routes list of GPXdoc struct
+    addRoute(doc, rte1);
+    addRoute(doc, rte2);
 }
 
 
@@ -72,10 +126,10 @@ bool updateComponentName(char *fileDir, int compFlag, int index, char *newName) 
     if (isValidGPXdoc) {
         //if (remove(fileDir) == 0) { //delete the file
             isUpdated = writeGPXdoc(doc, fileDir);
-            printf("isvalid\n");
+            //printf("isvalid\n");
         //}
     } else {
-        printf("isInvalid\n");
+        //printf("isInvalid\n");
     }
 
     deleteGPXdoc(doc);
@@ -109,7 +163,7 @@ GPXdoc *updateTrackName(GPXdoc *doc, char *newName, int index) {
     ListIterator iter = createIterator(updatedDoc->tracks);
     while ((trk = nextElement(&iter)) != NULL) {
         if (i == index) strcpy(trk->name, newName);
-        printf("track name: %s\n", trk->name);
+        //printf("track name: %s\n", trk->name);
         i++;
     }
 
@@ -1191,10 +1245,10 @@ void addWaypoint(Route *rt, Waypoint *wpt) {
 }
 
 
-void addRoute(GPXdoc *doc, Route *rte) {
-    if (doc == NULL || rte == NULL) return;
+void addRoute(GPXdoc *doc, Route *rt) {
+    if (doc == NULL || rt == NULL) return;
 
-    insertBack(doc->routes, rte);
+    insertBack(doc->routes, rt);
 }
 
 
