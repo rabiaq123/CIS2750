@@ -27,6 +27,9 @@ $(document).ready(function() {
         let creator = $('#entryBoxGPXCreator').val();
         createNewGPX(filename, creator);
     };
+
+    //clear all textboxes on page load
+    $("input[type=text]").val('');
 });
 
 //add files in upload directory to File Log table
@@ -119,6 +122,11 @@ function displayGPXFileInfo() {
 function addAllComponentsToGPXViewTable(GPXobj) {
     //clear (all table rows) within <tbody/> before adding new rows for new file
     $("#GPXViewTable tbody tr").remove();
+
+    if (GPXobj.routesList.length == 0 && GPXobj.tracksList.length == 0) {
+        $('#GPXViewTable').append("<tr>" + "<td colspan='8'>No routes/tracks to be displayed</td>" + "</tr>");
+        return;
+    }
 
     //display all route components
     let counter = 1;

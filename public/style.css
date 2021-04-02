@@ -57,6 +57,9 @@ th {
     position: sticky;
     font-weight: lighter;
 }
+td {
+    vertical-align: middle;
+}
 .FileLogTableScrollBar {
     position: relative;
     max-height: 200px;
@@ -73,6 +76,12 @@ a {
 #FindPathBtwnTable {
     width:50%;
 }
+#entryBoxDeltaVal {
+    width:50%;
+}
 #addRouteForm {
     width: 50%;
 }
+/* input:required {
+    border-color: rgb(218, 208, 208);
+} */
