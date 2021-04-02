@@ -31,22 +31,26 @@
 /***A3 functions***/
 
 
-bool createNewGPX(char *filename, double version, char *creator, int creatorLen) {
+bool createNewGPX(char *filename, char *creator, int creatorLen) {
+    if(strstr(filename, ".gpx") == NULL) return false; //filename must have .gpx extension
+
     //if file exists already, do not create GPX file with same name (do not overwrite)
     struct stat buffer;
     if (stat(filename, &buffer) == 0) return false;
-
+    
     GPXdoc *doc = malloc(sizeof(GPXdoc));
-    doc->creator = calloc((creatorLen) + 1, sizeof(char)); //including NULL terminator
+    doc->creator = calloc((creatorLen) + 1, sizeof(char)); //didn't use strlen() as JavaScript doesn't use \0
 
+    doc->version = 1.1;
     strcpy(doc->namespace, "http://www.topografix.com/GPX/1/1");
-    doc->version = version;
     strcpy(doc->creator, creator);
 
     initializeReqLists(doc);
 
     if (!validateGPXDoc(doc, "./parser/gpx.xsd")) return false;
-    if (!writeGPXdoc(doc, filename)) return false;
+    if (!writeGPXdoc(doc, filename)) return false; //save to disk
+
+    deleteGPXdoc(doc);
 
     return true;
 }
@@ -1183,31 +1187,76 @@ char* GPXtoJSON(const GPXdoc* gpx) {
 void addWaypoint(Route *rt, Waypoint *wpt) {
     if (rt == NULL || wpt == NULL) return;
 
-    return;
+    insertBack(rt->waypoints, wpt);
 }
+
 
 void addRoute(GPXdoc *doc, Route *rte) {
     if (doc == NULL || rte == NULL) return;
 
-    return;
+    insertBack(doc->routes, rte);
 }
+
 
 GPXdoc* JSONtoGPX(const char* gpxString) {
     if (gpxString == NULL) return NULL;
 
-    return NULL;
+    GPXdoc *doc = malloc(sizeof(GPXdoc));
+    double version;
+    char creator[100] = {'\0'};
+
+    //{"version":ver, "creator":"creatorValue"}
+    sscanf(gpxString, "\"version\":%lf,\"creator\":\"%s\"}", &version, creator);
+
+    initializeReqLists(doc);
+    doc->creator = calloc((strlen(creator) + 1), sizeof(char));
+
+    //store info in GPXdoc
+    strcpy(doc->namespace, "http://www.topografix.com/GPX/1/1"); //will remain constant
+    doc->version = version;
+    strcpy(doc->creator, creator);
+
+    return doc;
 }
+
 
 Waypoint* JSONtoWaypoint(const char* gpxString) {
     if (gpxString == NULL) return NULL;
+    
+    Waypoint *wpt = malloc(sizeof(Waypoint));
+    double lon, lat;
 
-    return NULL;
+    //{lat":latVal,"lon":lonVal}
+    sscanf(gpxString, "\"lat\":%lf,\"lon\":%lf}", &lat, &lon);
+
+    wpt->otherData = initializeList(&gpxDataToString, &deleteGpxData, &compareGpxData);
+    wpt->name = calloc(300, sizeof(char));
+
+    //store info parsed from JSON string into GPXdoc
+    wpt->latitude = lat;
+    wpt->longitude = lon;
+
+    return wpt;
 }
+
 
 Route *JSONtoRoute(const char *gpxString) {
     if (gpxString == NULL) return NULL;
+    
+    Route *rte = malloc(sizeof(Route));
+    char name[300] = {'\0'};
 
-    return NULL;
+    rte->waypoints = initializeList(&waypointToString, &deleteWaypoint, &compareWaypoints);
+    rte->otherData = initializeList(&gpxDataToString, &deleteGpxData, &compareGpxData);
+    rte->name = calloc(300, sizeof(char));
+
+    //{"name":"nameVal"}
+    sscanf(gpxString, "\"name\":\"%s\"}", name);
+
+    //store info in GPXdoc
+    strcpy(rte->name, name);
+
+    return rte;
 }
 
 
