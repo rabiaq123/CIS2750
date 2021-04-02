@@ -31,6 +31,18 @@
 /***A3 functions***/
 
 
+bool addRouteToGPXWrapper(char *filename, double wpt1Lat, double wpt1Lon, double wpt2Lat, double wpt2Lon) {
+    GPXdoc *doc = createValidGPXdoc(filename, "./parser/gpx.xsd");
+
+    addNewRteToGPX(doc, wpt1Lat, wpt1Lon, wpt2Lat, wpt2Lon); //add to GPXdoc struct for pre-existing file
+
+    if (!validateGPXDoc(doc, "./parser/gpx.xsd")) return false;
+    if (!writeGPXdoc(doc, filename)) return false; //save to disk
+
+    return true;
+}
+
+
 bool createNewGPX(char *filename, char *creator, int creatorLen) {
     if(strstr(filename, ".gpx") == NULL) return false; //filename must have .gpx extension
 
@@ -46,7 +58,7 @@ bool createNewGPX(char *filename, char *creator, int creatorLen) {
     strcpy(doc->creator, creator);
 
     initializeReqLists(doc);
-    addNewRtesToCreatedGPX(doc);
+    for (int i = 0; i < 2; i++) addNewRteToGPX(doc, 43.537299, 43.537299, 43.537299, 43.537299); //add to newly created GPXdoc struct
 
     if (!validateGPXDoc(doc, "./parser/gpx.xsd")) return false;
     if (!writeGPXdoc(doc, filename)) return false; //save to disk
@@ -57,56 +69,34 @@ bool createNewGPX(char *filename, char *creator, int creatorLen) {
 }
 
 
-void addNewRtesToCreatedGPX(GPXdoc *doc) {
-    Route *rte1 = malloc(sizeof(Route));
-    Waypoint *wpt1Rte1 = malloc(sizeof(Waypoint));
-    Waypoint *wpt2Rte1 = malloc(sizeof(Waypoint));
-    Route *rte2 = malloc(sizeof(Route));
-    Waypoint *wpt1Rte2 = malloc(sizeof(Waypoint));
-    Waypoint *wpt2Rte2 = malloc(sizeof(Waypoint));
+void addNewRteToGPX(GPXdoc *doc, double wpt1Lat, double wpt1Lon, double wpt2Lat, double wpt2Lon) {
+    Route *rte = malloc(sizeof(Route));
+    Waypoint *wpt1 = malloc(sizeof(Waypoint));
+    Waypoint *wpt2 = malloc(sizeof(Waypoint));
 
     //initialize parts of Route struct that are required to be initialized
-    //route 1
-    rte1->name = calloc(300, sizeof(char));
-    rte1->waypoints = initializeList(&waypointToString, &deleteWaypoint, &compareWaypoints);
-    rte1->otherData = initializeList(&gpxDataToString, &deleteGpxData, &compareGpxData);
-    //route 2
-    rte2->name = calloc(300, sizeof(char));
-    rte2->waypoints = initializeList(&waypointToString, &deleteWaypoint, &compareWaypoints);
-    rte2->otherData = initializeList(&gpxDataToString, &deleteGpxData, &compareGpxData);
+    rte->name = calloc(300, sizeof(char));
+    rte->waypoints = initializeList(&waypointToString, &deleteWaypoint, &compareWaypoints);
+    rte->otherData = initializeList(&gpxDataToString, &deleteGpxData, &compareGpxData);
 
     //initialize parts of the Waypoint struct that are required to be initialized
-    //waypoint 1 route 1
-    wpt1Rte1->name = calloc(300, sizeof(char));
-    wpt1Rte1->otherData = initializeList(&gpxDataToString, &deleteGpxData, &compareGpxData);
-    wpt1Rte1->latitude = 43.537299;
-    wpt1Rte1->longitude = 43.537299;
-    //waypoint 2 route 1
-    wpt2Rte1->name = calloc(300, sizeof(char));
-    wpt2Rte1->otherData = initializeList(&gpxDataToString, &deleteGpxData, &compareGpxData);
-    wpt2Rte1->latitude = 43.537299;
-    wpt2Rte1->longitude = 43.537299;
-    //waypoint 1 route 2
-    wpt1Rte2->name = calloc(300, sizeof(char));
-    wpt1Rte2->otherData = initializeList(&gpxDataToString, &deleteGpxData, &compareGpxData);
-    wpt1Rte2->latitude = 43.537299;
-    wpt1Rte2->longitude = 43.537299;
-    //waypoint 2 route 2
-    wpt2Rte2->name = calloc(300, sizeof(char));
-    wpt2Rte2->otherData = initializeList(&gpxDataToString, &deleteGpxData, &compareGpxData);
-    wpt2Rte2->latitude = 43.537299;
-    wpt2Rte2->longitude = 43.537299;
+    //waypoint 1
+    wpt1->name = calloc(300, sizeof(char));
+    wpt1->otherData = initializeList(&gpxDataToString, &deleteGpxData, &compareGpxData);
+    wpt1->latitude = wpt1Lat;
+    wpt1->longitude = wpt1Lon;
+    //waypoint 2
+    wpt2->name = calloc(300, sizeof(char));
+    wpt2->otherData = initializeList(&gpxDataToString, &deleteGpxData, &compareGpxData);
+    wpt2->latitude = wpt2Lat;
+    wpt2->longitude = wpt2Lon;
 
-    //adding two waypoints to route 1's list
-    addWaypoint(rte1, wpt1Rte1);
-    addWaypoint(rte1, wpt2Rte1);
-    //adding two waypoints to route 2's list
-    addWaypoint(rte2, wpt1Rte2);
-    addWaypoint(rte2, wpt2Rte2);
+    //adding two waypoints to route's list of waypoints
+    addWaypoint(rte, wpt1);
+    addWaypoint(rte, wpt2);
 
-    //insert routes at the back of newly created Routes list of GPXdoc struct
-    addRoute(doc, rte1);
-    addRoute(doc, rte2);
+    //insert route at the back of newly created Routes list of GPXdoc struct
+    addRoute(doc, rte);
 }
 
 

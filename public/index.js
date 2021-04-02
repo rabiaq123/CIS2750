@@ -20,13 +20,23 @@ $(document).ready(function() {
     //GPX View table should be empty on page load
     $('#GPXViewTable').append("<tr>" + "<td colspan='8'>No file selected</td>" + "</tr>");
 
-    //create GPX form submit button
+    //create event listener for GPX form submit button
     document.getElementById('createGPXButton').onclick = function(e) {
         e.preventDefault();
         let filename = $('#entryBoxGPXName').val();
         let creator = $('#entryBoxGPXCreator').val();
         createNewGPX(filename, creator);
     };
+
+    //create event listener for Add Route form submit button
+    document.getElementById('addRouteButton').onclick = function(e) {
+        e.preventDefault();
+        let wpt1Lat = $('#entryBoxRtept1Lat').val();
+        let wpt1Lon = $('#entryBoxRtept1Lon').val();
+        let wpt2Lat = $('#entryBoxRtept2Lat').val();
+        let wpt2Lon = $('#entryBoxRtept2Lon').val();
+        addRouteToGPX(wpt1Lat, wpt1Lon, wpt2Lat, wpt2Lon);
+    }
 
     //clear all textboxes on page load
     $("input[type=text]").val('');
@@ -253,7 +263,7 @@ function updateComponent(flag, counter) {
         success: function (data) { //the parameter "data" contains the data received from the server
             if (data.isUpdated == true) {            
                 console.log("Successfully updated component name and saved to disk.");
-                location.reload(); //reload page to show changes in file contents
+                setTimeout(function() { location.reload() }, 3000); //reload page (with 3s delay) to show changes in file contents
             } else {
                 console.log("Error occurred while attempting to rename component to: " + name);
             }
@@ -279,7 +289,7 @@ function createNewGPX(filename, creator) {
         success: function (data) { //the parameter "data" contains the data received from the server
             if (data.isCreated == true) {
                 console.log("Successfully created GPX file '" + filename + "' and saved to disk.");
-                location.reload(); //reload page to show changes in file contents
+                setTimeout(function() { location.reload() }, 3000); //reload page (with 3s delay) to show changes in file contents
             } else {
                 if (filename.length != 0 && creator.length != 0) {
                     alert("Error occurred during GPX file creation.\n" +
@@ -293,4 +303,39 @@ function createNewGPX(filename, creator) {
             console.log(error);
         }
     });
+}
+
+
+//add route to GPX file
+function addRouteToGPX(wpt1Lat, wpt1Lon, wpt2Lat, wpt2Lon) {
+    let chosenFile = $('#AddRouteDropdown option:selected').val();
+    $.ajax({
+        type: 'get',                    //Request type
+        dataType: 'json',               //Data type - we will use JSON for almost everything 
+        url: '/addRouteToGPX',          //The server endpoint we are connecting to
+        data: {                         //Data we are sending to the server, currently an object with no instance vars
+            fileDir: "./uploads/" + chosenFile,
+            wpt1Lat: wpt1Lat,
+            wpt1Lon: wpt1Lon,
+            wpt2Lat: wpt2Lat,
+            wpt2Lon: wpt2Lon
+        },
+        success: function (data) { //the parameter "data" contains the data received from the server
+            if (data.isAdded == 1) {
+                console.log("Route successfully added to GPX file: " + chosenFile);
+                setTimeout(function() { location.reload() }, 3000); //reload page (with 3s delay) to show changes in file contents
+            } else {
+                console.log("Error in adding new route to GPX file: " + chosenFile);
+            }
+        },
+        fail: function (error) {
+            console.log(error);
+        }
+    });
+
+    //if user selects default (no file) option again, display No file selected message
+    if (chosenFile == "") {
+        $("#GPXViewTable tbody tr").remove(); //clear <tbody/> before adding new rows for new file
+        $('#GPXViewTable').append("<tr>" + "<td colspan='8'>No file selected</td>" + "</tr>");
+    }
 }

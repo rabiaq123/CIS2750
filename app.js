@@ -78,7 +78,8 @@ let GPXParserLib = ffi.Library('./libgpxparser', {
     'getAllRouteComponentsJSON': ['string', ['string']],
     'getAllTrackComponentsJSON': ['string', ['string']],
     'updateComponentName': ['bool', ['string', 'int', 'int', 'string']],
-    'createNewGPX': ['bool', ['string', 'string', 'int']]
+    'createNewGPX': ['bool', ['string', 'string', 'int']],
+    'addRouteToGPXWrapper': ['bool', ['string', 'double', 'double', 'double', 'double']]
 });
 
 /*
@@ -181,6 +182,24 @@ app.get('/createNewGPX', function (req, res) {
         isCreated: isCreated
     });
 });
+
+
+//add route to pre-existing GPX file
+app.get('/addRouteToGPX', function (req, res) {
+    let fileDir = req.query.fileDir;
+    let wpt1Lat = req.query.wpt1Lat;
+    let wpt1Lon = req.query.wpt1Lon;
+    let wpt2Lat = req.query.wpt2Lat;
+    let wpt2Lon = req.query.wpt2Lon;
+    let isAdded = GPXParserLib.addRouteToGPXWrapper(fileDir, wpt1Lat, wpt1Lon, wpt2Lat, wpt2Lon);
+
+    //return whether GPX file was successfully created
+    res.send({
+        isAdded: isAdded
+    });
+
+});
+
 
 app.listen(portNum);
 console.log('Running app at localhost: ' + portNum);

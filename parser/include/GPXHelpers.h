@@ -15,10 +15,24 @@
 /**********A3 helper functions**********/
 
 /**
- * HELPER populate newly created empty GPX doc with (two - my choice of amount) new routes
+ * HELPER warpper function to add new Route with (two - my choice of amount) waypoints to pre-existing GPX file
+ * @param filenam naem of file to add route in
+ * @param wpt1Lat latitude of waypoint 1
+ * @param wpt1Lon longitude of waypoint 1
+ * @param wpt2Lat latitude of waypoint 2
+ * @param wpt2Lon longitude of waypoint 2
+ */
+bool addRouteToGPXWrapper(char *filename, double wpt1Lat, double wpt1Lon, double wp2Lat, double wpt2Lon);
+
+/**
+ * HELPER populate newly created empty GPX doc with a route consisting of (two - my choice of amount) waypoints
  * @param doc GPXdoc to put new routes in
- */ 
-void addNewRtesToCreatedGPX(GPXdoc *doc);
+ * @param wpt1Lat latitude of waypoint 1
+ * @param wpt1Lon longitude of waypoint 1
+ * @param wpt2Lat latitude of waypoint 2
+ * @param wpt2Lon longitude of waypoint 2
+ */
+void addNewRteToGPX(GPXdoc *doc, double wpt1Lat, double wpt1Lon, double wp2Lat, double wpt2Lon);
 
 /**
  * HELPER create new GPX file from scratch, without reading in a GPX file

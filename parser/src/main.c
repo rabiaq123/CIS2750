@@ -13,13 +13,14 @@ int main() {
     // char file[] = "/home/undergrad/0/rqureshi/Desktop/W21/CIS2750/cis2750w21_project/uploads/simple.gpx";
     // char schema[] = "/home/undergrad/0/rqureshi/Desktop/W21/CIS2750/cis2750w21_project/parser/gpx.xsd";
 
-    char creator[6] = {'\0'};
-    strcpy(creator, "rabia");
-    char filename[30] = {'\0'};
-    strcpy(filename, "/uploads/thingsss.gpx");
-    int creatorLen = strlen(creator);
+    char filename[300] = {'\0'};
+    strcpy(filename, "/home/undergrad/0/rqureshi/Desktop/W21/CIS2750/cis2750w21_project/uploads/rabia.gpx");
+    double wpt1Lat = 70;
+    double wpt1Lon = 70;
+    double wpt2Lat = 80;
+    double wpt2Lon = 80;
 
-    if (!createNewGPX(filename, creator, creatorLen)) printf("WRONG WRONG WRONG\n");
+    if (!addRouteToGPXWrapper(filename, wpt1Lat, wpt1Lon, wpt2Lat, wpt2Lon)) printf("WRONG WRONG WRONG\n");
 
     printf("\n");
 
