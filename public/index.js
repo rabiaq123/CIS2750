@@ -24,9 +24,8 @@ $(document).ready(function() {
     document.getElementById('createGPXButton').onclick = function(e) {
         e.preventDefault();
         let filename = $('#entryBoxGPXName').val();
-        let version = $('#entryBoxGPXVersion').val();
         let creator = $('#entryBoxGPXCreator').val();
-        createNewGPX(filename, version, creator);
+        createNewGPX(filename, creator);
     };
 });
 
@@ -260,34 +259,29 @@ function updateComponent(flag, counter) {
 
 
 //send user input for new GPX file to server
-function createNewGPX(filename, version, creator) {
-    //version must be a numeric value
-    if (isNaN(version)) {
-        alert("Please enter a double (numeric) value for your GPX file's version attribute.");
-        return;
-    }
-
-    if (version.length == 0) version = "1.1"; //set to default value if not specified by user
-
+function createNewGPX(filename, creator) {
     $.ajax({
         type: 'get',                    //Request type
         dataType: 'json',               //Data type - we will use JSON for almost everything 
         url: '/createNewGPX',           //The server endpoint we are connecting to
         data: {                         //Data we are sending to the server, currently an object with no instance vars
             fileDir: "./uploads/" + filename,
-            version: version,
             creator: creator
         },
         success: function (data) { //the parameter "data" contains the data received from the server
             if (data.isCreated == true) {
-                console.log("Successfully created GPX file and saved to disk.");
+                console.log("Successfully created GPX file '" + filename + "' and saved to disk.");
                 location.reload(); //reload page to show changes in file contents
             } else {
-                alert("Error occurred during GPX file creation; " + filename + " may already exist.");
+                if (filename.length != 0 && creator.length != 0) {
+                    alert("Error occurred during GPX file creation.\n" +
+                    "File '" + filename + "' may already exist, or it may not match GPX specifications.");
+                } else {
+                    alert("Please fill in both fields.");
+                }
             }
         },
         fail: function (error) {
-            // Non-200 return, do something with error
             console.log(error);
         }
     });

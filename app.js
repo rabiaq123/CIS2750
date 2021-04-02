@@ -78,7 +78,7 @@ let GPXParserLib = ffi.Library('./libgpxparser', {
     'getAllRouteComponentsJSON': ['string', ['string']],
     'getAllTrackComponentsJSON': ['string', ['string']],
     'updateComponentName': ['bool', ['string', 'int', 'int', 'string']],
-    'createNewGPX': ['bool', ['string','double', 'string', 'int']]
+    'createNewGPX': ['bool', ['string', 'string', 'int']]
 });
 
 /*
@@ -172,10 +172,9 @@ app.get('/updateComponent', function (req, res) {
 //create GPX file
 app.get('/createNewGPX', function (req, res) {
     let fileDir = req.query.fileDir;
-    let version = req.query.version;
     let creator = req.query.creator;
     let creatorLen = creator.length;
-    let isCreated = GPXParserLib.createNewGPX(fileDir, version, creator, creatorLen);
+    let isCreated = GPXParserLib.createNewGPX(fileDir, creator, creatorLen);
 
     //return whether GPX file was successfully created
     res.send({

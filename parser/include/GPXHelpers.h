@@ -17,12 +17,11 @@
 /**
  * HELPER create new GPX file from scratch, without reading in a GPX file
  * @param filename name of new GPX file, entered by user
- * @param version version user enters
  * @param creator creator user enters
  * @param creatorLen length of user input in 'creator' textbox
  * @return boolean representing whether new GPX could be created
  */
-bool createNewGPX(char *filename, double version, char *creator, int creatorLen);
+bool createNewGPX(char *filename, char *creator, int creatorLen);
 
 /**
  * HELPER update attempt to update track component name
