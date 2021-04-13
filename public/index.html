@@ -19,8 +19,15 @@
     <link rel="shortcut icon" href="#">
 </head>
 <body>
-    <h1 class="w3-panel">GPS Data Viewer</h1>
-    
+    <div class="w3-panel">
+        <h1>GPS Data Viewer</h1>
+        <hr>
+    </div>
+    <div class="w3-panel" id="A3Panel">
+        <h2><span>A3 Functionality</span></h2>
+        <a href="#A4Panel">Go to A4 functionality...</a>
+    </div>
+
     <!-----------------
         FILE LOG PANEL
     ------------------>
@@ -94,7 +101,6 @@
             </table>
         </div>
         <br>
-        <!-- <button id="GPXViewAddRowButton" onclick="AddDummyRow()">Add Dummy Row</button> -->
     </div>
 
     <!-----------------
@@ -229,11 +235,19 @@
         </table>
 
         <br>
+        <hr>
     </div>
 
     <!-----------------
         A4 DB SECTION
     ------------------>
+    <div class="w3-panel" id="A4Panel">
+        <h2><span>A4 Functionality</span></h2>
+        <p>After every command, except Execute Query, display up an alert with the status line based on a 
+            count of each table's rows, e.g.: "Database has N1 files, N2 routes, and N3 points"</p>
+        <a href="#top">Go to top...</a>
+    </div>
+
     <!-- 'Login' Panel -->
     <div class="w3-panel" id="DBLoginPanel">
         <hr>
@@ -264,10 +278,78 @@
     </div>
 
     <!-- 'Store all files' Panel -->
+    <div class="w3-panel" id="DBStoreFilesPanel">
+        <hr>
+        <h2>Store All Files</h2>
+        <p>Insert all the data from the files displayed in the File Log Panel into your database.</p>
+        <br>
+        <button type="button" class="btn btn-secondary" id="storeAllFilesButton" disabled>Store Files</button>
+        <br>
+    </div>
+
     <!-- 'Track Route Updates' Panel -->
+    <div class="w3-panel" id="DBTrackRoutesPanel">
+        <hr>
+        <h2>Track Route Updates</h2>
+        <p>The information in the ROUTE and POINT tables must accurately reflect the file contents.
+            Update the database tables to ensure they have the appropriate and most recent data from the selected file.</p>
+        <br>
+        <!--dropdown to select GPX file-->
+        <label for="DBTrackRoutesDropdown">Select GPX file: </label>
+        <select id="DBTrackRoutesDropdown">
+            <option value="" selected> </option> <!--file should not be selected by default-->
+        </select>
+        <br>
+        <br>
+        <button type="button" class="btn btn-secondary" id="trackRouteUpdatesButton" disabled>Track Updates</button>
+        <br>
+    </div>
+
     <!-- 'Clear all data' Panel -->
+    <div class="w3-panel" id="DBClearDataPanel">
+        <hr>
+        <h2>Clear All Data</h2>
+        <p>Delete all rows from all the tables. This may have to be done in a specific order due to the foreign keys.
+            This is only active if tables have data in them. Do not drop the tables themselves.
+            You do not need to update the File View Panel, or GPX View panel. 
+            That A3 functionality does not rely on the database, and does not need to be modified.</p>
+        <br>
+        <button type="button" class="btn btn-secondary" id="clearDataButton" disabled>Clear Data</button>
+        <br>
+    </div>
+
     <!-- 'Display DB Status' Panel -->
+    <div class="w3-panel" id="DBDisplayStatusPanel">
+        <hr>
+        <h2>Display Status</h2>
+        <p>This displays an alert with the status line: "Database has N1 files, N2 routes, and N3 points".</p>
+        <br>
+        <button type="button" class="btn btn-secondary" id="displayStatusButton" disabled>Clear Data</button>
+        <br>
+    </div>
+
     <!-- 'Execute Query' Panel -->
+    <div class="w3-panel" id="DBQueryPanel">
+        <hr>
+        <h2>Execute Query</h2>
+        <p>The intended user of this functionality is someone who wants to access a GPX file database 
+            (or just a database of routes). The result of the each query must be displayed as a table.</p>
+        <br>
+        <!--dropdown to select GPX file-->
+        <label for="DBQueryDropdown">Display: </label>
+        <select id="DBQueryDropdown">
+            <option value="" selected> </option> <!--option should not be selected by default-->
+            <option value="Query1">All routes</option>
+            <option value="Query2">Routes from specific file</option>
+            <option value="Query3">All points from a specific route</option>
+            <option value="Query4">All points from a specific file</option>
+            <option value="Query5">N shortest/longest routes from a specific file</option>
+        </select>
+        <br>
+        <br>
+        <button type="button" class="btn btn-secondary" id="executeQueryButton" disabled>Execute Query</button>
+        <br>
+    </div>
 
 
     <!-- Leave me at the bottom of body -->

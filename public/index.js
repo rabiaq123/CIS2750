@@ -44,9 +44,6 @@ $(document).ready(function() {
         let uname = $('#entryBoxDBUser').val();
         let pass = $('#entryBoxDBPass').val();
         let name = $('#entryBoxDBName').val();
-        // console.log("USERNAME BEFORE: ", uname);
-        // console.log("PASSWORD BEFORE: ", pass);
-        // console.log("DB NAME BEFORE: ", name);
         login(uname, pass, name);
     }
 
@@ -82,8 +79,10 @@ function convertFileToJSON(filename) {
             if (data.doc != null) {
                 console.log("GPX file loaded in successfully: " + data.filename);
                 addFileToFileLog(data); //add file to File Log Panel table
-                $('#GPXViewDropdown').append(new Option(data.filename, data.filename)); //add file to GPX View dropdown
-                $('#AddRouteDropdown').append(new Option(data.filename, data.filename)); //add file to Add Route dropdown
+                //add file to dropdowns
+                $('#GPXViewDropdown').append(new Option(data.filename, data.filename));
+                $('#AddRouteDropdown').append(new Option(data.filename, data.filename));
+                $('#DBTrackRoutesDropdown').append(new Option(data.filename, data.filename));
             } else {
                 console.log("Error in loading file: " + filename);
             }
@@ -380,6 +379,13 @@ function login(uname, pass, name) {
             //ensures invalid files do not get displayed
             if (data.loginStatus == true) {
                 console.log("Successfully created connection to database:", name);
+                //disable following UI elements for updating files in DB if no files available
+                let numFiles = $('#GPXViewDropdown').children('option').length;
+                if (numFiles > 0) {
+                    $('#storeAllFilesButton').prop('disabled', false);
+                    $('#trackRouteUpdatesButton').prop('disabled', false);
+                    //$('#storeAllFilesButton').prop('disabled', false);
+                }
             } else {
                 alert("Invalid credentials. Please try again.");
             }

@@ -60,6 +60,19 @@ th {
 td {
     vertical-align: middle;
 }
+a {
+    color:rgb(101, 165, 187);
+}
+h2 span {
+    background-color: rgb(138, 180, 182);
+}
+input[required] {
+    border-color: rgb(196, 195, 212);
+}
+button[disabled], button:disabled {
+    background-color: #8c949b;
+    /* #6c757d */
+}
 .FileLogTableScrollBar {
     position: relative;
     max-height: 200px;
@@ -70,9 +83,6 @@ td {
     max-height: 200px;
     overflow: auto;
 }
-a {
-    color:rgb(101, 165, 187);
-}
 #FindPathBtwnTable {
     width:50%;
 }
@@ -82,6 +92,3 @@ a {
 #addRouteForm {
     width: 50%;
 }
-/* input:required {
-    border-color: rgb(218, 208, 208);
-} */

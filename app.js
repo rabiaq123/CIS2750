@@ -208,19 +208,13 @@ MYSQL Database Connection
 const mysql = require('mysql2/promise');
 
 //these variables will be used throughout the code requiring DB connection
-var hostname;
-var username;
-var password;
-var database;
-
-// app.get('/test', function(req, res) {
-//     console.log("USERNAME: ", req.query.uname);
-//     console.log("PASSWORD: ", req.query.pass);
-//     console.log("DB NAME: ", req.query.name);
-// });
+var h = 'dursley.socs.uoguelph.ca';
+var u;
+var p;
+var db;
 
 
-//login to database
+//login to database and save user's login info
 app.get('/login', async function (req, res) {
     let uname = req.query.uname;
     let pass = req.query.pass;
@@ -239,6 +233,11 @@ app.get('/login', async function (req, res) {
             password: pass,
             database: name
         });
+        //if login successful, save login info to use it throughout without prompting user for multiple logins
+        u = uname;
+        p = password;
+        db = name;
+
         /*
         create DB tables (if they do not already exist) when program executes 
         every 'execute' statement must be placed in a try block, as it may throw an error 
