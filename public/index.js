@@ -38,25 +38,21 @@ $(document).ready(function() {
         addRouteToGPX(wpt1Lat, wpt1Lon, wpt2Lat, wpt2Lon);
     }
 
-    //create event listener for 'Find Path' Between form submit button
-    // document.getElementById('FindPathBtwnButton').onclick() {
+    //create event listener for 'Database Login' form submit button
+    document.getElementById('loginButton').onclick = function(e) {
+        e.preventDefault();
+        let uname = $('#entryBoxDBUser').val();
+        let pass = $('#entryBoxDBPass').val();
+        let name = $('#entryBoxDBName').val();
+        // console.log("USERNAME BEFORE: ", uname);
+        // console.log("PASSWORD BEFORE: ", pass);
+        // console.log("DB NAME BEFORE: ", name);
+        login(uname, pass, name);
+    }
 
-    //     findPathBtwn();
-    // }
-
-    //clear all textboxes on page load
+    //clear all text boxes on page load
     $("input[type=text]").val('');
 });
-
-
-//find path between
-// function findPathBtwn() {
-//     if (wpt1Lat < -90 || wpt1Lat > 90 || wpt2Lat < -90 || wpt2Lat > 90 ||
-//         wpt1Lon < -180 || wpt1Lon > 180 || wpt2Lon < -180 || wpt2Lon > 180) {
-//         alert("Invalid Input: Latitude must be within -90 to 90 and\nlongitude must be within -180 to 180.");
-//         return;
-//     }
-// }
 
 
 //add files in upload directory to File Log table
@@ -363,9 +359,33 @@ function addRouteToGPX(wpt1Lat, wpt1Lon, wpt2Lat, wpt2Lon) {
     }
 }
 
+
 /*
 A4 DB Functionality
 MYSQL Database Connection
 */
 
 //allow user to login to database
+function login(uname, pass, name) {
+    $.ajax({
+        type: 'get',
+        dataType: 'json',
+        url: '/login',
+        data: {
+            uname: uname,
+            pass: pass,
+            name: name
+        },
+        success: function (data) {
+            //ensures invalid files do not get displayed
+            if (data.loginStatus == true) {
+                console.log("Successfully created connection to database:", name);
+            } else {
+                alert("Invalid credentials. Please try again.");
+            }
+        },
+        fail: function (error) {
+            console.log(error);
+        }
+    });
+}

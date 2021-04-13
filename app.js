@@ -213,7 +213,69 @@ var username;
 var password;
 var database;
 
-//
+// app.get('/test', function(req, res) {
+//     console.log("USERNAME: ", req.query.uname);
+//     console.log("PASSWORD: ", req.query.pass);
+//     console.log("DB NAME: ", req.query.name);
+// });
+
+
+//login to database
+app.get('/login', async function (req, res) {
+    let uname = req.query.uname;
+    let pass = req.query.pass;
+    let name = req.query.name;
+    let connected = true;
+
+    let connection;
+    try {
+        /*
+        'await' keyword ensures the next statement runs only after 
+        createConnection() has returned the connection object
+        */
+        connection = await mysql.createConnection({
+            host: 'dursley.socs.uoguelph.ca',
+            user: uname,
+            password: pass,
+            database: name
+        });
+        /*
+        create DB tables (if they do not already exist) when program executes 
+        every 'execute' statement must be placed in a try block, as it may throw an error 
+        */
+        //create FILE table on database
+        try {
+            connection.execute("CREATE TABLE IF NOT EXISTS FILE (gpx_id INT AUTO_INCREMENT, file_name VARCHAR(60) NOT NULL, ver DECIMAL(2,1) NOT NULL, creator VARCHAR(256) NOT NULL, PRIMARY KEY(gpx_id) )");
+        } catch (e) {
+            connected = false;
+            console.log("Error occurred while creating table FILE: ", e);
+        }
+        //create ROUTE table on database
+        try {
+            connection.execute("CREATE TABLE IF NOT EXISTS ROUTE (route_id INT AUTO_INCREMENT, route_name VARCHAR(256), route_len FLOAT(15,7) NOT NULL, gpx_id INT NOT NULL, PRIMARY KEY(route_id), FOREIGN KEY(gpx_id) REFERENCES FILE(gpx_id) ON DELETE CASCADE )");
+        } catch (e) {
+            connected = false;
+            console.log("Error occurred while creating table ROUTE: ", e);
+        }
+        //create POINT table on database
+        try {
+            connection.execute("CREATE TABLE IF NOT EXISTS POINT (point_id INT AUTO_INCREMENT, point_index INT NOT NULL, latitude DECIMAL(11,7) NOT NULL, longitude DECIMAL(11,7) NOT NULL, point_name VARCHAR(256), route_id INT NOT NULL, PRIMARY KEY(point_id), FOREIGN KEY(route_id) REFERENCES ROUTE(route_id) ON DELETE CASCADE )");
+        } catch (e) {
+            connected = false;
+            console.log("Error occurred while creating table POINT: ", e);
+        }
+    } catch (e) { //error handling for creating database connection
+        connected = false;
+        console.log("Query error: " + e);
+    } finally { //close connection
+        if (connection && connection.end) connection.end();
+    }
+
+    //return whether login was successful
+    res.send({
+        loginStatus: connected
+    });
+});
 
 
 app.listen(portNum);
