@@ -201,5 +201,20 @@ app.get('/addRouteToGPX', function (req, res) {
 });
 
 
+/* 
+A4 DB Functionality
+MYSQL Database Connection 
+*/
+const mysql = require('mysql2/promise');
+
+//these variables will be used throughout the code requiring DB connection
+var hostname;
+var username;
+var password;
+var database;
+
+//
+
+
 app.listen(portNum);
 console.log('Running app at localhost: ' + portNum);

@@ -20,7 +20,7 @@ $(document).ready(function() {
     //GPX View table should be empty on page load
     $('#GPXViewTable').append("<tr>" + "<td colspan='8'>No file selected</td>" + "</tr>");
 
-    //create event listener for GPX form submit button
+    //create event listener for 'Create GPX' form submit button
     document.getElementById('createGPXButton').onclick = function(e) {
         e.preventDefault();
         let filename = $('#entryBoxGPXName').val();
@@ -28,7 +28,7 @@ $(document).ready(function() {
         createNewGPX(filename, creator);
     };
 
-    //create event listener for Add Route form submit button
+    //create event listener for 'Add Route' form submit button
     document.getElementById('addRouteButton').onclick = function(e) {
         e.preventDefault();
         let wpt1Lat = $('#entryBoxRtept1Lat').val();
@@ -38,9 +38,26 @@ $(document).ready(function() {
         addRouteToGPX(wpt1Lat, wpt1Lon, wpt2Lat, wpt2Lon);
     }
 
+    //create event listener for 'Find Path' Between form submit button
+    // document.getElementById('FindPathBtwnButton').onclick() {
+
+    //     findPathBtwn();
+    // }
+
     //clear all textboxes on page load
     $("input[type=text]").val('');
 });
+
+
+//find path between
+// function findPathBtwn() {
+//     if (wpt1Lat < -90 || wpt1Lat > 90 || wpt2Lat < -90 || wpt2Lat > 90 ||
+//         wpt1Lon < -180 || wpt1Lon > 180 || wpt2Lon < -180 || wpt2Lon > 180) {
+//         alert("Invalid Input: Latitude must be within -90 to 90 and\nlongitude must be within -180 to 180.");
+//         return;
+//     }
+// }
+
 
 //add files in upload directory to File Log table
 function addUploadFilesToFileLog(GPXFileNamesArr) {
@@ -345,3 +362,10 @@ function addRouteToGPX(wpt1Lat, wpt1Lon, wpt2Lat, wpt2Lon) {
         $('#GPXViewTable').append("<tr>" + "<td colspan='8'>No file selected</td>" + "</tr>");
     }
 }
+
+/*
+A4 DB Functionality
+MYSQL Database Connection
+*/
+
+//allow user to login to database
