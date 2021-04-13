@@ -235,7 +235,7 @@ app.get('/login', async function (req, res) {
         });
         //if login successful, save login info to use it throughout without prompting user for multiple logins
         u = uname;
-        p = password;
+        p = pass;
         db = name;
 
         /*

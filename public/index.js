@@ -82,7 +82,7 @@ function convertFileToJSON(filename) {
                 //add file to dropdowns
                 $('#GPXViewDropdown').append(new Option(data.filename, data.filename));
                 $('#AddRouteDropdown').append(new Option(data.filename, data.filename));
-                $('#DBTrackRoutesDropdown').append(new Option(data.filename, data.filename));
+                $('#DBTrackRouteDropdown').append(new Option(data.filename, data.filename));
             } else {
                 console.log("Error in loading file: " + filename);
             }
@@ -379,12 +379,15 @@ function login(uname, pass, name) {
             //ensures invalid files do not get displayed
             if (data.loginStatus == true) {
                 console.log("Successfully created connection to database:", name);
-                //disable following UI elements for updating files in DB if no files available
+                //make clickable upon login, as DB tables are also created by then
+                $('#clearDataButton').prop('disabled', false);
+                $('#displayStatusButton').prop('disabled', false);
+                //keep UI elements for updating files in DB disabled, if no files available
                 let numFiles = $('#GPXViewDropdown').children('option').length;
-                if (numFiles > 0) {
+                if (numFiles > 0) { //this functionality needs files to be on the server
                     $('#storeAllFilesButton').prop('disabled', false);
                     $('#trackRouteUpdatesButton').prop('disabled', false);
-                    //$('#storeAllFilesButton').prop('disabled', false);
+                    $('#executeQueryButton').prop('disabled', false);
                 }
             } else {
                 alert("Invalid credentials. Please try again.");
