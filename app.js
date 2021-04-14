@@ -329,9 +329,10 @@ app.get('/storeInDB', async function (req, res) {
                     if (waypoint.name == "None") {
                         record = "INSERT INTO POINT VALUES (null," + waypoint.index + "," +
                             waypoint.latitude + "," + waypoint.longitude + ", null," + routeInsertID + ")";
+                    } else {
+                        record = "INSERT INTO POINT VALUES (null," + waypoint.index + "," +
+                            waypoint.latitude + "," + waypoint.longitude + ",'" + waypoint.name + "'," + routeInsertID + ")";
                     }
-                    record = "INSERT INTO POINT VALUES (null," + waypoint.index + "," +
-                        waypoint.latitude + "," + waypoint.longitude + ",'" + waypoint.name + "'," + routeInsertID + ")";
                     let [rowsPOINT, fieldsPOINT] = await connection.execute(record);
                 }
             }
@@ -360,13 +361,9 @@ app.post('/clearDB', async function (req, res) {
             password: p,
             database: db
         });
-
-        await connection.connect(async function (err) {
-            if (err) throw (err);
-            await connection.execute("DELETE FROM FILE");
-            await connection.execute("DELETE FROM ROUTE");
-            await connection.execute("DELETE FROM POINT");
-        });
+        await connection.execute("DELETE FROM FILE");
+        await connection.execute("DELETE FROM ROUTE");
+        await connection.execute("DELETE FROM POINT");
     } catch (err) {
         console.log("Query error: " + err);
         isCleared = false;
