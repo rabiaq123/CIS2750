@@ -58,6 +58,11 @@ $(document).ready(function() {
         setTimeout(function () { location.reload(true) }, 2000); //reload page (with 3s delay) to show logout console message
     }
 
+    //create event listener for 'Clear Database' button
+    document.getElementById('clearDataButton').onclick = function() {
+        clearDB();
+    }
+
     //clear all text boxes on page load
     $("input[type=text]").val('');
 });
@@ -434,6 +439,23 @@ function storeInDB() {
 }
 
 
+//clear database
+function clearDB() {
+    $.ajax({
+        type: 'post',
+        dataType: 'json',
+        url: '/clearDB',
+        data: {},
+        success: function (data) {
+            if (data.isCleared == true) console.log("Successfully cleared database!");
+        },
+        fail: function (error) {
+            console.log(error);
+        }
+    });
+}
+
+
 //log user out of database
 function logout() {
     $.ajax({
@@ -442,7 +464,7 @@ function logout() {
         url: '/logout',
         data: {},
         success: function (data) {
-            if (data.isLoggedOut) console.log("Successfully logged out of database!");
+            if (data.isLoggedOut == true) console.log("Successfully logged out of database!");
         },
         fail: function (error) {
             console.log(error);

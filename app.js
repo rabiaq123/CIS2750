@@ -228,7 +228,7 @@ app.get('/login', async function (req, res) {
         createConnection() has returned the connection object
         */
         connection = await mysql.createConnection({
-            host: 'dursley.socs.uoguelph.ca',
+            host: h,
             user: uname,
             password: pass,
             database: name
@@ -243,14 +243,9 @@ app.get('/login', async function (req, res) {
         every 'execute' statement must be placed in a try block, as it may throw an error 
         */
         //create FILE, ROUTE, and POINT table on database
-        try {
-            connection.execute("CREATE TABLE IF NOT EXISTS FILE (gpx_id INT AUTO_INCREMENT, file_name VARCHAR(60) NOT NULL, ver DECIMAL(2,1) NOT NULL, creator VARCHAR(256) NOT NULL, PRIMARY KEY(gpx_id) )");
-            connection.execute("CREATE TABLE IF NOT EXISTS ROUTE (route_id INT AUTO_INCREMENT, route_name VARCHAR(256), route_len FLOAT(15,7) NOT NULL, gpx_id INT NOT NULL, PRIMARY KEY(route_id), FOREIGN KEY(gpx_id) REFERENCES FILE(gpx_id) ON DELETE CASCADE )");
-            connection.execute("CREATE TABLE IF NOT EXISTS POINT (point_id INT AUTO_INCREMENT, point_index INT NOT NULL, latitude DECIMAL(11,7) NOT NULL, longitude DECIMAL(11,7) NOT NULL, point_name VARCHAR(256), route_id INT NOT NULL, PRIMARY KEY(point_id), FOREIGN KEY(route_id) REFERENCES ROUTE(route_id) ON DELETE CASCADE )");
-        } catch (e) {
-            connected = false;
-            console.log("Error occurred while creating table: ", e);
-        }
+        await connection.execute("CREATE TABLE IF NOT EXISTS FILE (gpx_id INT AUTO_INCREMENT, file_name VARCHAR(60) NOT NULL, ver DECIMAL(2,1) NOT NULL, creator VARCHAR(256) NOT NULL, PRIMARY KEY(gpx_id) )");
+        await connection.execute("CREATE TABLE IF NOT EXISTS ROUTE (route_id INT AUTO_INCREMENT, route_name VARCHAR(256), route_len FLOAT(15,7) NOT NULL, gpx_id INT NOT NULL, PRIMARY KEY(route_id), FOREIGN KEY(gpx_id) REFERENCES FILE(gpx_id) ON DELETE CASCADE )");
+        await connection.execute("CREATE TABLE IF NOT EXISTS POINT (point_id INT AUTO_INCREMENT, point_index INT NOT NULL, latitude DECIMAL(11,7) NOT NULL, longitude DECIMAL(11,7) NOT NULL, point_name VARCHAR(256), route_id INT NOT NULL, PRIMARY KEY(point_id), FOREIGN KEY(route_id) REFERENCES ROUTE(route_id) ON DELETE CASCADE )");
     } catch (e) { //error handling for creating database connection
         connected = false;
         console.log("Query error: " + e);
@@ -266,14 +261,25 @@ app.get('/login', async function (req, res) {
 
 
 //from server, get each file's version and creator, and store in database along with filename
-app.get('/storeInDB', async function (req,res) {
+app.get('/storeInDB', async function (req, res) {
     let gpxInsertID, routeInsertID;
-    let fileDir, fileToJSON; 
+    let fileDir, fileToJSON;
     let routesToJSON, routesParsed;
     let GPXdoc;
     let record; //row to be added to table
-    let rteNameBuffer, wptNameBuffer;
-    let isStored = true;
+    let isStored = false;
+    let filenames = [];
+
+
+    //get files from server
+    const dir = path.join(__dirname, 'uploads'); //directory path
+    fs.readdir(dir, async function (error, files) {
+        if (error) throw (error);
+        files.forEach(async function (file) {
+            filenames.push(file);
+        });
+    });
+
 
     try {
         connection = await mysql.createConnection({
@@ -282,62 +288,94 @@ app.get('/storeInDB', async function (req,res) {
             password: p,
             database: db
         });
+        // connection.connect(function (err) {
+        //     if (err) throw (err);
 
-        connection.connect(function(err) {
-            if (err) throw (err);
+        // });
 
-            //get files from server
-            const dir = path.join(__dirname, 'uploads'); //directory path
-            fs.readdir(dir, async function (error, files) {
-                if (error) return console.log('Error in reading directory: ' + error);
-                for (let file of files) {
-                    //check if file is already in FILE table 
-                    let [rows, fields] = await connection.execute("SELECT * FROM FILE WHERE FILE.file_name='" + file + "'");
-                    if (rows && rows.length > 0) {
-                        console.log("File", file, "already exists in database");
-                        continue;
+        for (let file of filenames) {
+            //check if file is already in FILE table 
+            connection.execute("SELECT * FROM FILE");
+            let [rows, fields] = await connection.execute("SELECT * FROM FILE WHERE FILE.file_name='" + file + "'");
+            if (rows && rows.length > 0) {
+                console.log("File", file, "already exists in database");
+                continue;
+            }
+            fileDir = "./uploads/" + file;
+
+            //obtain version and creator of each file
+            fileToJSON = GPXParserLib.GPXFileToJSON(fileDir);
+            GPXdoc = JSON.parse(fileToJSON);
+            if (GPXdoc == null) continue;
+
+            //insert file into FILE table - auto-incremented gpx_id can be given value of 'null'
+            record = "INSERT INTO FILE VALUES (null,'" + file + "'," + GPXdoc.version + ",'" + GPXdoc.creator + "')";
+            let [rowsFILE, fieldsFILE] = await connection.execute(record);
+            gpxInsertID = rowsFILE.insertId; //id of last insert (value of gpx_id) in FILE table
+
+            //obtain relevant information regarding each of file's routes and each route's waypoints
+            routesToJSON = GPXParserLib.getAllRouteComponentsJSON(fileDir);
+            routesParsed = JSON.parse(routesToJSON);
+            for (let route of routesParsed) {
+                //insert route into ROUTE table 
+                if (route.name == "None") record = "INSERT INTO ROUTE VALUES (null, null," + route.len + "," + gpxInsertID + ")";
+                else record = "INSERT INTO ROUTE VALUES (null,'" + route.name + "'," + route.len + "," + gpxInsertID + ")";
+                let [rowsROUTE, fieldsROUTE] = await connection.execute(record);
+                routeInsertID = rowsROUTE.insertId; //id of last insert (value of route_id) in ROUTE table
+
+                //insert point into POINT table - auto-incremented route_id can be given value of 'null'
+                for (let waypoint of route.waypoints) {
+                    //console.log("WAYPOINT NAME", wpt.name);
+                    if (waypoint.name == "None") {
+                        record = "INSERT INTO POINT VALUES (null," + waypoint.index + "," +
+                            waypoint.latitude + "," + waypoint.longitude + ", null," + routeInsertID + ")";
                     }
-                    fileDir = "./uploads/" + file;
-                    
-                    //obtain version and creator of each file
-                    fileToJSON = GPXParserLib.GPXFileToJSON(fileDir);
-                    GPXdoc = JSON.parse(fileToJSON);
-                    //insert file into FILE table - auto-incremented gpx_id can be given value of 'null'
-                    record = "INSERT INTO FILE VALUES (null,'" + file + "'," + GPXdoc.version + ",'" + GPXdoc.creator + "')";
-                    let [rowsFILE, fieldsFILE] = await connection.execute(record);
-                    gpxInsertID = rowsFILE.insertId; //id of last insert (value of gpx_id) in FILE table
-    
-                    //obtain relevant information regarding each of file's routes and each route's waypoints
-                    routesToJSON = GPXParserLib.getAllRouteComponentsJSON(fileDir);
-                    routesParsed = JSON.parse(routesToJSON);
-                    for (let route of routesParsed) {
-                        //insert route into ROUTE table 
-                        if ((rteNameBuffer = rte.name) == "None") rteNameBuffer = "null";
-                        else rteNameBuffer = "'" + rteNameBuffer + "'"; //enclose in '' before adding string to INSERT statement
-                        record = "INSERT INTO ROUTE VALUES (null,'" + rteNameBuffer + "'," + route.len + "," + gpxInsertID + ")";
-                        let [rowsROUTE, fieldsROUTE] = await connection.execute(record);
-                        routeInsertID = rowsROUTE.insertId; //id of last insert (value of route_id) in ROUTE table
-                        
-                        //insert point into POINT table - auto-incremented route_id can be given value of 'null'
-                        for (let wpt of route.waypoints) {
-                            if ((wptNameBuffer = wpt.name) == "None") wptNameBuffer = "null";
-                            else wptNameBuffer = "'" + wptNameBuffer + "'"; //enclose in '' before adding string to INSERT statement
-                            record = "INSERT INTO POINT VALUES (null," + wpt.index + "," +
-                                wpt.latitude + "," + wpt.longitude + "," + wptNameBuffer + "," + routeInsertID + ")";
-                        }
-                    }
+                    record = "INSERT INTO POINT VALUES (null," + waypoint.index + "," +
+                        waypoint.latitude + "," + waypoint.longitude + ",'" + waypoint.name + "'," + routeInsertID + ")";
+                    let [rowsPOINT, fieldsPOINT] = await connection.execute(record);
                 }
-            });
-        });
-    } catch (e) {
-        console.log("Query error: " + e);
-        isStored = false;
+            }
+        }
+        isStored =  true;
+    } catch (err) {
+        console.log(err);
     } finally { //close connection
         if (connection && connection.end) connection.end();
     }
 
     res.send({
         isStored: isStored
+    });
+});
+
+
+//clear database (delete all rows from every table without deleting table)
+app.post('/clearDB', async function (req, res) {
+    let isCleared = true;
+
+    try {
+        connection = await mysql.createConnection({ //wait for this shit to happen before you can move on
+            host: h,
+            user: u,
+            password: p,
+            database: db
+        });
+
+        await connection.connect(async function (err) {
+            if (err) throw (err);
+            await connection.execute("DELETE FROM FILE");
+            await connection.execute("DELETE FROM ROUTE");
+            await connection.execute("DELETE FROM POINT");
+        });
+    } catch (err) {
+        console.log("Query error: " + err);
+        isCleared = false;
+    } finally { //close connection
+        if (connection && connection.end) connection.end();
+    }
+
+    res.send({
+        isCleared: isCleared
     });
 });
 
