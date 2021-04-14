@@ -47,6 +47,17 @@ $(document).ready(function() {
         login(uname, pass, name);
     }
 
+    //create event listener for 'Store All Files' button
+    document.getElementById('storeAllFilesButton').onclick = function() {
+        storeInDB();
+    }
+
+    //create event listener for 'Logout' button
+    document.getElementById('logoutButton').onclick = function() {
+        logout();
+        setTimeout(function () { location.reload(true) }, 2000); //reload page (with 3s delay) to show logout console message
+    }
+
     //clear all text boxes on page load
     $("input[type=text]").val('');
 });
@@ -58,7 +69,7 @@ function addUploadFilesToFileLog(GPXFileNamesArr) {
     if (GPXFileNamesArr.length < 1) {
         $('#FileLogTable').append("<tr>" + "<td colspan='6'>No files</td>" + "</tr>"); //add row to File Log table
     } else {
-        for (filename of GPXFileNamesArr) {
+        for (let filename of GPXFileNamesArr) {
             convertFileToJSON(filename);
         }
     }
@@ -382,16 +393,56 @@ function login(uname, pass, name) {
                 //make clickable upon login, as DB tables are also created by then
                 $('#clearDataButton').prop('disabled', false);
                 $('#displayStatusButton').prop('disabled', false);
+                $('#logoutButton').prop('disabled', false);
                 //keep UI elements for updating files in DB disabled, if no files available
                 let numFiles = $('#GPXViewDropdown').children('option').length;
                 if (numFiles > 0) { //this functionality needs files to be on the server
                     $('#storeAllFilesButton').prop('disabled', false);
                     $('#trackRouteUpdatesButton').prop('disabled', false);
-                    $('#executeQueryButton').prop('disabled', false);
                 }
             } else {
                 alert("Invalid credentials. Please try again.");
             }
+        },
+        fail: function (error) {
+            console.log(error);
+        }
+    });
+}
+
+
+//store all files in DB
+/*
+get all files on the server (in the uploads/ directory)
+for each filename in the array of filenames, create a GPXdoc struct 
+insert the filename and its corresponding GPXdoc struct's related info (filename, version, creator) into table
+*/
+function storeInDB() {
+    $.ajax({
+        type: 'get',
+        dataType: 'json',
+        url: '/storeInDB',
+        data: {},
+        success: function (data) {
+            if (data.isStored) console.log("Successfully stored all files in database!");
+            else console.log("Error in storing files.");
+        },
+        fail: function (error) {
+            console.log(error);
+        }
+    });
+}
+
+
+//log user out of database
+function logout() {
+    $.ajax({
+        type: 'get',
+        dataType: 'json',
+        url: '/logout',
+        data: {},
+        success: function (data) {
+            if (data.isLoggedOut) console.log("Successfully logged out of database!");
         },
         fail: function (error) {
             console.log(error);
