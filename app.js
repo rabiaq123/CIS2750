@@ -267,11 +267,12 @@ app.get('/login', async function (req, res) {
 //from server, get each file's version and creator, and store in database along with filename
 app.get('/storeInDB', async function (req, res) {
     let fileDir, fileToJSON;
-    let filenames = [], filesStored = [];
+    let filenames = [];
     let routesToJSON, routesParsed;
     let GPXdoc;
     let gpxInsertID, routeInsertID;
     let record; //row to be added to table
+    let filesStored = [], routesStored = [], pointsStored = [];
     let isStored = false;
 
     //get files from server
@@ -293,11 +294,9 @@ app.get('/storeInDB', async function (req, res) {
 
         for (let file of filenames) {
             //check if file is already in FILE table 
-            connection.execute("SELECT * FROM FILE");
-            let [results] = await connection.execute("SELECT * FROM FILE WHERE FILE.file_name='" + file + "'");
-            if (results && results.length > 0) {
+            let [duplicatesFILE] = await connection.execute("SELECT * FROM FILE WHERE FILE.file_name='" + file + "'");
+            if (duplicatesFILE && duplicatesFILE.length > 0) {
                 console.log("File", file, "already exists in database");
-                filesStored.push(file); //add to list of files in database
                 continue;
             }
             fileDir = "./uploads/" + file;
@@ -306,7 +305,6 @@ app.get('/storeInDB', async function (req, res) {
             fileToJSON = GPXParserLib.GPXFileToJSON(fileDir);
             GPXdoc = JSON.parse(fileToJSON);
             if (GPXdoc == null) continue; //invalid file
-            filesStored.push(file); //if valid, add to list of files in database
 
             //insert file into FILE table - auto-incremented gpx_id can be given value of 'null'
             record = "INSERT INTO FILE VALUES (null,'" + file + "'," + GPXdoc.version + ",'" + GPXdoc.creator + "')";
@@ -336,6 +334,12 @@ app.get('/storeInDB', async function (req, res) {
                 }
             }
         }
+        let [allFILE] = await connection.execute("SELECT * FROM FILE");
+        let [allROUTE] = await connection.execute("SELECT * FROM ROUTE");
+        let [allPOINT] = await connection.execute("SELECT * FROM POINT");
+        filesStored = allFILE;
+        routesStored = allROUTE;
+        pointsStored = allPOINT;
         if (filesStored.length > 0) isStored =  true;
     } catch (err) {
         console.log(err);
@@ -345,7 +349,9 @@ app.get('/storeInDB', async function (req, res) {
 
     res.send({
         isStored: isStored,
-        filesStored: filesStored
+        filesStored: filesStored,
+        routesStored: routesStored,
+        pointsStored: pointsStored
     });
 });
 
@@ -446,12 +452,6 @@ app.get('/query1', async function(req, res) {
 
 //execute Query 2
 app.get('/query2', async function(req,res) {
-    //get gpx id of selected file
-    //look for that gpx id in routes table 
-    //put the result in an array
-    //sort array based on name or length
-    //return array
-
     let sortChoice = req.query.sort; //1->name, 2->length
     let filename = req.query.file;
     let sortedResult = [];
@@ -481,11 +481,44 @@ app.get('/query2', async function(req,res) {
         if (connection && connection.end) connection.end();
     }
 
-    // console.log(result);
     res.send({
-        sortedRows: sortedResult
+        sortedRoutes: sortedResult
     });
 });
+
+
+//execute Query 3
+app.get('/query3', async function (req, res) {
+    //let routeName = req.query.route;
+    let routeID = req.query.route;
+    let sortedResult = [];
+
+    try {
+        connection = await mysql.createConnection({ //wait for this to happen before moving on
+            host: h,
+            user: u,
+            password: p,
+            database: db
+        });
+
+        // //get route ID of route
+        // let [result] = await connection.execute("SELECT * FROM ROUTE WHERE route_name='" + routeName + "'");
+        // routeID = result[0].route_id;
+        // //get all points with the same route ID
+        let [rowsSortedPOINT] = await connection.execute("SELECT * FROM POINT WHERE route_id=" + routeID + " ORDER BY point_index");
+        sortedResult = rowsSortedPOINT;
+    } catch (err) {
+        console.log(err);
+    } finally {
+        if (connection && connection.end) connection.end();
+    }
+
+    // console.log(result);
+    res.send({
+        sortedPoints: sortedResult
+    });
+});
+
 
 
 //log user out of database of connection still present
