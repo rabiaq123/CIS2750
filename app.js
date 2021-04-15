@@ -248,8 +248,8 @@ app.get('/login', async function (req, res) {
         await connection.execute("CREATE TABLE IF NOT EXISTS POINT (point_id INT AUTO_INCREMENT, point_index INT NOT NULL, latitude DECIMAL(11,7) NOT NULL, longitude DECIMAL(11,7) NOT NULL, point_name VARCHAR(256), route_id INT NOT NULL, PRIMARY KEY(point_id), FOREIGN KEY(route_id) REFERENCES ROUTE(route_id) ON DELETE CASCADE )");
     } catch (e) { //error handling for creating database connection
         connected = false;
-        console.log("Query error: " + e);
-    } finally { //close connection
+        console.log(e);
+    } finally {
         if (connection && connection.end) connection.end();
     }
 
@@ -266,7 +266,7 @@ app.get('/storeInDB', async function (req, res) {
     let fileDir, fileToJSON;
     let routesToJSON, routesParsed;
     let GPXdoc;
-    let record; //row to be added to table
+    let record, query; //row to be added to table
     let isStored = false;
     let filenames = [];
 
@@ -280,7 +280,6 @@ app.get('/storeInDB', async function (req, res) {
         });
     });
 
-
     try {
         connection = await mysql.createConnection({
             host: h,
@@ -288,16 +287,12 @@ app.get('/storeInDB', async function (req, res) {
             password: p,
             database: db
         });
-        // connection.connect(function (err) {
-        //     if (err) throw (err);
-
-        // });
 
         for (let file of filenames) {
             //check if file is already in FILE table 
             connection.execute("SELECT * FROM FILE");
-            let [rows, fields] = await connection.execute("SELECT * FROM FILE WHERE FILE.file_name='" + file + "'");
-            if (rows && rows.length > 0) {
+            let [results] = await connection.execute("SELECT * FROM FILE WHERE FILE.file_name='" + file + "'");
+            if (results && results.length > 0) {
                 console.log("File", file, "already exists in database");
                 continue;
             }
@@ -306,9 +301,15 @@ app.get('/storeInDB', async function (req, res) {
             //obtain version and creator of each file
             fileToJSON = GPXParserLib.GPXFileToJSON(fileDir);
             GPXdoc = JSON.parse(fileToJSON);
-            if (GPXdoc == null) continue;
+            if (GPXdoc == null) continue; //invalid file
 
             //insert file into FILE table - auto-incremented gpx_id can be given value of 'null'
+            let [rows] = await connection.execute("SELECT * FROM FILE");
+            // if (rows.length == 0) {
+            //     query = "ALTER TABLE FILE AUTO_INCREMENT = " + 0;
+            //     await connection.execute(query);
+            // }
+            // else 
             record = "INSERT INTO FILE VALUES (null,'" + file + "'," + GPXdoc.version + ",'" + GPXdoc.creator + "')";
             let [rowsFILE, fieldsFILE] = await connection.execute(record);
             gpxInsertID = rowsFILE.insertId; //id of last insert (value of gpx_id) in FILE table
@@ -340,7 +341,7 @@ app.get('/storeInDB', async function (req, res) {
         isStored =  true;
     } catch (err) {
         console.log(err);
-    } finally { //close connection
+    } finally {
         if (connection && connection.end) connection.end();
     }
 
@@ -364,10 +365,11 @@ app.post('/clearDB', async function (req, res) {
         await connection.execute("DELETE FROM FILE");
         await connection.execute("DELETE FROM ROUTE");
         await connection.execute("DELETE FROM POINT");
+//        await connection.execute("SELECT * FROM FILE");
     } catch (err) {
-        console.log("Query error: " + err);
+        console.log(err);
         isCleared = false;
-    } finally { //close connection
+    } finally {
         if (connection && connection.end) connection.end();
     }
 
