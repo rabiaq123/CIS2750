@@ -445,7 +445,7 @@ app.get('/query1', async function(req, res) {
     }
 
     res.send({
-        sortedRows: result
+        sortedRoutes: result
     });
 });
 
@@ -489,7 +489,6 @@ app.get('/query2', async function(req,res) {
 
 //execute Query 3
 app.get('/query3', async function (req, res) {
-    //let routeName = req.query.route;
     let routeID = req.query.route;
     let sortedResult = [];
 
@@ -501,10 +500,7 @@ app.get('/query3', async function (req, res) {
             database: db
         });
 
-        // //get route ID of route
-        // let [result] = await connection.execute("SELECT * FROM ROUTE WHERE route_name='" + routeName + "'");
-        // routeID = result[0].route_id;
-        // //get all points with the same route ID
+        //get all points with the same route ID
         let [rowsSortedPOINT] = await connection.execute("SELECT * FROM POINT WHERE route_id=" + routeID + " ORDER BY point_index");
         sortedResult = rowsSortedPOINT;
     } catch (err) {
@@ -513,7 +509,6 @@ app.get('/query3', async function (req, res) {
         if (connection && connection.end) connection.end();
     }
 
-    // console.log(result);
     res.send({
         sortedPoints: sortedResult
     });

@@ -58,6 +58,7 @@ $(document).ready(function() {
     //create event listener for 'Clear Database' button
     document.getElementById('clearDataButton').onclick = function() {
         clearDB();
+        setTimeout(function () { location.reload() }, 2000); //reload page (with 3s delay) to show logout console message
     }
 
     //create event listener for 'Display DB Status' button 
@@ -71,7 +72,7 @@ $(document).ready(function() {
         setTimeout(function () { location.reload() }, 2000); //reload page (with 3s delay) to show logout console message
     }
 
-    //disable DB commmands upon logout
+    //disable DB commands upon logout
     $('#clearDataButton').prop('disabled', true);
     $('#displayStatusButton').prop('disabled', true);
     $('#storeAllFilesButton').prop('disabled', true);
@@ -603,21 +604,6 @@ function enableQuery(queryButton, queryTable) {
     let numDBFiles = $('#Q2FileDropdown').children('option').length;
     if (numDBFiles > 0) $(queryButton).prop('disabled', false);
     $(queryTable).append("<tr>" + "<td colspan='6'>Nothing to display</td>" + "</tr>"); //until 'Execute' button is clicked
-
-
-    // $.ajax({
-    //     type: 'get',
-    //     dataType: 'json',
-    //     url: '/getGPXFilesInUploadsDir',
-    //     data: {},
-    //     success: function(data) {
-    //         if (data.filenames.length > 0) $(queryButton).prop('disabled', false);
-    //         $(queryTable).append("<tr>" + "<td colspan='6'>Nothing to display</td>" + "</tr>"); //until 'Execute' button is clicked
-    //     },
-    //     fail: function(error) {
-    //         console.log(error);
-    //     }
-    // })
 }
 
 
@@ -641,7 +627,7 @@ function executeQuery1() {
 
             //display sorted results in table
             let routeName;
-            for (let row of data.sortedRows) {
+            for (let row of data.sortedRoutes) {
                 routeName = row.route_name;
                 if (!routeName) routeName = "[no name for route " + row.route_id + "]";
                 $('#Q1Table').append("<tr>" + 
@@ -706,6 +692,9 @@ function executeQuery2() {
 function executeQuery3() {
     let routeID = $('#Q3RouteDropdown option:selected').val();
 
+    //clear (all table rows) within <tbody/> before adding new rows for new Query
+    $("#Q3Table tbody tr").remove();
+
     if (routeID == "") {
         $('#Q3Table').append("<tr>" + "<td colspan='6'>Nothing to display</td>" + "</tr>");
     } else {
@@ -716,10 +705,7 @@ function executeQuery3() {
             data: {
                 route: routeID
             },
-            success: function (data) {
-                //clear (all table rows) within <tbody/> before adding new rows for new Query
-                $("#Q3Table tbody tr").remove();
-    
+            success: function (data) {    
                 //display sorted points in table
                 let pointName;
                 for (let row of data.sortedPoints) {
@@ -743,7 +729,6 @@ function executeQuery3() {
         })
     }
 }
-
 
 
 //execute Query 4
