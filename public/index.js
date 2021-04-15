@@ -92,6 +92,12 @@ $(document).ready(function() {
     document.getElementById('executeQ1Button').onclick = function () {
         executeQuery1();
     }
+
+    //create event listener for 'Execute' button for Query 2
+    document.getElementById('executeQ2Button').onclick = function () {
+        executeQuery2();
+    }
+
 });
 
 
@@ -482,6 +488,8 @@ function storeInDB() {
                 console.log("Successfully stored all files in database!");
                 displayDBStatus();
                 $("#DBQueryDropdown").prop("disabled", false);
+                //add files in server to dropdown
+                for (let filename of data.filesStored) $('#Q2FileDropdown').append(new Option(filename, filename));
             }
             else console.log("Error in storing files - there may be no files on the server.");
         },
@@ -617,10 +625,8 @@ function executeQuery1() {
                 routeName = row.route_name;
                 if (!routeName) routeName = "[no name for route " + row.route_id + "]";
                 $('#Q1Table').append("<tr>" + 
-                    "<td>" + row.route_id + "</td>" +
                     "<td>" + routeName + "</td>" +
                     "<td>" + row.route_len + "</td>" +
-                    "<td>" + row.gpx_id + "</td>" +
                     "</tr>");
             }
             console.log("Successfully executed Query 1!");
@@ -634,6 +640,44 @@ function executeQuery1() {
 
 //execute Query 2
 function executeQuery2() {
+    let sortChoice = 0; //1->name, 2->length, 0->neither
+    let filename = $('#Q2FileDropdown option:selected').val();
+
+    if ($('#Q2NameOption').is(':checked')) sortChoice = 1;
+    else if ($('#Q2LengthOption').is(':checked')) sortChoice = 2;
+
+    if (filename != "") {
+        $.ajax({
+            type: 'get',
+            dataType: 'json',
+            url: '/query2',
+            data: {
+                sort: sortChoice,
+                file: filename
+            },
+            success: function (data) {
+                //clear (all table rows) within <tbody/> before adding new rows for new Query
+                $("#Q2Table tbody tr").remove();
+
+                //display sorted results in table
+                //$('#Q2Table').append("<tr>" + "<td colspan='2'> <b>File: " + filename + "</b></td>" + "</tr>");
+
+                let routeName;
+                for (let row of data.sortedRows) {
+                    routeName = row.route_name;
+                    if (!routeName) routeName = "[no name for route " + row.route_id + "]";
+                    $('#Q2Table').append("<tr>" +
+                        "<td>" + routeName + "</td>" +
+                        "<td>" + row.route_len + "</td>" +
+                        "</tr>");
+                }
+                console.log("Successfully executed Query 2!");
+            },
+            fail: function (error) {
+                console.log(error);
+            }
+        })
+    }
 }
 
 

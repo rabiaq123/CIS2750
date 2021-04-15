@@ -360,6 +360,7 @@
                     <label for="length">Sort by length</label><br>
                 </div>
             </form>
+            <br>
             <button type="button" class="btn btn-secondary" id="executeQ1Button" disabled>Execute</button>
             <br><br>
 
@@ -369,10 +370,8 @@
                     <!--table headers-->
                     <thead>
                         <tr>
-                            <th>Route ID</th>
                             <th>Route Name</th>
                             <th>Route Length</th>
-                            <th>GPX ID</th>
                         </tr>
                     </thead>
                     <!--Every row in tbody contains one component of the selected file, and its basic info-->
@@ -385,6 +384,42 @@
         <div id="Q2Panel">
             <br>
             <h3>Query 2</h3>
+            <p>Display the routes from a specific file. This query displays the names and lengths of all routes, as well as the file
+            name. Allow the user to sort the results by route name and route length.</p>
+            <!--dropdown to select GPX file from database-->
+            <label for="Q2FileDropdown">Choose file in database: </label>
+            <select id="Q2FileDropdown">
+                <option value="" selected> </option> <!--option should not be selected by default-->
+            </select>
+            <br>
+
+            <!--radio buttons for sort option-->
+            <form>
+                <div id="Q2SelectSortForm">
+                    <input type="radio" id="Q2NameOption" value="name" name="group2">
+                    <label for="name">Sort by name</label><br>
+                    <input type="radio" id="Q2LengthOption" value="length" name="group2">
+                    <label for="length">Sort by length</label><br>
+                </div>
+            </form>
+            <br>
+            <button type="button" class="btn btn-secondary" id="executeQ2Button" disabled>Execute</button>
+            <br><br>
+            
+            <!--table should be scrollable-->
+            <div class="table-wrapper-scroll-y Q1TableScrollBar" id="Q2TableDiv">
+                <table id="Q2Table" class="queryTable">
+                    <!--table headers-->
+                    <thead>
+                        <tr>
+                            <th>Route ID</th>
+                            <th>Route Name</th>
+                        </tr>
+                    </thead>
+                    <!--Every row in tbody contains one component of the selected file, and its basic info-->
+                    <tbody></tbody>
+                </table>
+            </div>
         </div>
 
         <!--QUERY 3-->

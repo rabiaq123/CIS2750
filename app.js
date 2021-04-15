@@ -267,7 +267,7 @@ app.get('/login', async function (req, res) {
 //from server, get each file's version and creator, and store in database along with filename
 app.get('/storeInDB', async function (req, res) {
     let fileDir, fileToJSON;
-    let filenames = [];
+    let filenames = [], filesStored = [];
     let routesToJSON, routesParsed;
     let GPXdoc;
     let gpxInsertID, routeInsertID;
@@ -297,6 +297,7 @@ app.get('/storeInDB', async function (req, res) {
             let [results] = await connection.execute("SELECT * FROM FILE WHERE FILE.file_name='" + file + "'");
             if (results && results.length > 0) {
                 console.log("File", file, "already exists in database");
+                filesStored.push(file); //add to list of files in database
                 continue;
             }
             fileDir = "./uploads/" + file;
@@ -305,6 +306,7 @@ app.get('/storeInDB', async function (req, res) {
             fileToJSON = GPXParserLib.GPXFileToJSON(fileDir);
             GPXdoc = JSON.parse(fileToJSON);
             if (GPXdoc == null) continue; //invalid file
+            filesStored.push(file); //if valid, add to list of files in database
 
             //insert file into FILE table - auto-incremented gpx_id can be given value of 'null'
             record = "INSERT INTO FILE VALUES (null,'" + file + "'," + GPXdoc.version + ",'" + GPXdoc.creator + "')";
@@ -334,7 +336,7 @@ app.get('/storeInDB', async function (req, res) {
                 }
             }
         }
-        if (filenames.length > 0) isStored =  true;
+        if (filesStored.length > 0) isStored =  true;
     } catch (err) {
         console.log(err);
     } finally {
@@ -343,6 +345,7 @@ app.get('/storeInDB', async function (req, res) {
 
     res.send({
         isStored: isStored,
+        filesStored: filesStored
     });
 });
 
@@ -437,6 +440,50 @@ app.get('/query1', async function(req, res) {
 
     res.send({
         sortedRows: result
+    });
+});
+
+
+//execute Query 2
+app.get('/query2', async function(req,res) {
+    //get gpx id of selected file
+    //look for that gpx id in routes table 
+    //put the result in an array
+    //sort array based on name or length
+    //return array
+
+    let sortChoice = req.query.sort; //1->name, 2->length
+    let filename = req.query.file;
+    let sortedResult = [];
+
+    try {
+        connection = await mysql.createConnection({ //wait for this to happen before moving on
+            host: h,
+            user: u,
+            password: p,
+            database: db
+        });
+
+        //get GPX ID of filename
+        let [result] = await connection.execute("SELECT * FROM FILE WHERE file_name='" + filename + "'");
+        let gpxID = result[0].gpx_id;
+
+        if (sortChoice == 1) {
+            let [rowsSortedROUTE] = await connection.execute("SELECT * FROM ROUTE WHERE gpx_id=" + gpxID + " ORDER BY route_name");
+            sortedResult = rowsSortedROUTE;
+        } else if (sortChoice == 2) {
+            let [rowsSortedROUTE] = await connection.execute("SELECT * FROM ROUTE WHERE gpx_id=" + gpxID + " ORDER BY route_len");
+            sortedResult = rowsSortedROUTE;
+        }
+    } catch (err) {
+        console.log(err);
+    } finally {
+        if (connection && connection.end) connection.end();
+    }
+
+    // console.log(result);
+    res.send({
+        sortedRows: sortedResult
     });
 });
 
