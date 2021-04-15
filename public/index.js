@@ -65,11 +65,30 @@ $(document).ready(function() {
     //create event listener for 'Logout' button
     document.getElementById('logoutButton').onclick = function() {
         logout();
+        //disable command buttons upon logout
+        $('#clearDataButton').prop('disabled', true);
+        $('#displayStatusButton').prop('disabled', true);
+        $('#storeAllFilesButton').prop('disabled', true);
+        $('#trackRouteUpdatesButton').prop('disabled', true);
+        $('#logoutButton').prop('disabled', true);
         setTimeout(function () { location.reload() }, 2000); //reload page (with 3s delay) to show logout console message
     }
 
     //clear all text boxes on page load
     $("input[type=text]").val('');
+    
+    //hide all query panels on page load
+    $('#Q1Panel').hide();
+    $('#Q2Panel').hide();
+    $('#Q3Panel').hide();
+    $('#Q4Panel').hide();
+    $('#Q5Panel').hide();
+    //disable execute query buttons upon logout
+    $('#executeQ1Button').prop('disabled', true);
+    $('#executeQ2Button').prop('disabled', true);
+    $('#executeQ3Button').prop('disabled', true);
+    $('#executeQ4Button').prop('disabled', true);
+    $('#executeQ5Button').prop('disabled', true);
 });
 
 
@@ -484,6 +503,96 @@ function clearDB() {
             console.log(error);
         }
     });
+}
+
+
+//show query panel of query selected from Query Panel dropdown 
+function showQuery() {
+    let chosenQuery = $('#DBQueryDropdown option:selected').val();
+    
+    $("#Q1Table tbody tr").remove();
+    $('#Q1Panel').hide();
+    $("#Q2Table tbody tr").remove();
+    $('#Q2Panel').hide();
+    $("#Q3Table tbody tr").remove();
+    $('#Q3Panel').hide();
+    $("#Q4Table tbody tr").remove();
+    $('#Q4Panel').hide();
+    $("#Q5Table tbody tr").remove();
+    $('#Q5Panel').hide();
+
+    if (chosenQuery == "Q1Option") enableQuery('#executeQ1Button');
+    else if (chosenQuery == "Q2Option") enableQuery('#executeQ1Button');
+    else if (chosenQuery == "Q3Option") enableQuery('#executeQ1Button');
+    else if (chosenQuery == "Q4Option") enableQuery('#executeQ1Button');
+    else if (chosenQuery == "Q5Option") enableQuery('#executeQ1Button');
+}
+
+
+//enable Query 1 - show panel, enable 'Execute' button if server has files
+function enableQuery(enableQueryButton) {
+    $('#Q1Panel').show();
+    $("#Q1Table tbody tr").remove(); //clear (all table rows) within <tbody/> before adding new rows for new file
+    
+    $.ajax({
+        type: 'get',
+        dataType: 'json',
+        url: '/getGPXFilesInUploadsDir',
+        data: {},
+        success: function(data) {
+            if (data.filenames.length > 0) $(enableQueryButton).prop('disabled', false);
+        }
+    })
+    
+    // let sortChoice = 0; //1 -> name, 2 -> length, 0 -> neither
+    // if ($('#Q1NameOption').is(':checked')) sortChoice = 1;
+    // else if ($('#Q1SortOption').is(':checked')) sortChoice = 2;
+
+    // if (sortChoice == 1 || sortChoice == 2) {
+    //     $.ajax({
+    //         type: 'get',
+    //         dataType: 'json',
+    //         url: '/query1',
+    //         data: {
+    //             sort: sortChoice
+    //         },
+    //         success: function (data) {
+    //             if (data.isLoggedOut == true) console.log("Successfully logged out of database!");
+    //         },
+    //         fail: function (error) {
+    //             console.log(error);
+    //         }
+    //     });
+    // }
+
+    // if (GPXobj.routesList.length == 0 && GPXobj.tracksList.length == 0) {
+    //     $('#GPXViewTable').append("<tr>" + "<td colspan='8'>No routes/tracks to be displayed</td>" + "</tr>");
+    //     return;
+    // }
+}
+
+
+//execute Query 2
+function executeQuery2(chosenQuery) {
+    $('#Q2Panel').show();
+}
+
+
+//execute Query 3
+function executeQuery3(chosenQuery) {
+    $('#Q3Panel').show();
+}
+
+
+//execute Query 4
+function executeQuery4(chosenQuery) {
+    $('#Q4Panel').show();
+}
+
+
+//execute Query 5
+function executeQuery5(chosenQuery) {
+    $('#Q5Panel').show();
 }
 
 

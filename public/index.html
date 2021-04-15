@@ -18,6 +18,7 @@
     <!-- Custom CSS End -->
     <link rel="shortcut icon" href="#">
 </head>
+
 <body>
     <div class="w3-panel">
         <h1>GPS Data Viewer</h1>
@@ -92,7 +93,7 @@
                         <th># of Points</th>
                         <th>Length</th>
                         <th>Loop</th>
-                        <th colspan="2">Rename Component</th>
+                        <th colspan="2">Rename Component</th> <!--2 columns added here, but they're merged for header-->
                         <th>View Other Data</th> <!--have a button in each row that creates alert with otherData string-->
                     </tr>
                 </thead>
@@ -148,8 +149,7 @@
         <select id="AddRouteDropdown">
             <option value="" selected> </option> <!--file should not be selected by default-->
         </select>
-        <br>
-        <br>
+        <br><br>
 
         <!--allow user to enter 2 waypoints' information-->
         <form id="addRouteForm">
@@ -299,8 +299,7 @@
         <select id="DBTrackRouteDropdown">
             <option value="" selected> </option> <!--file should not be selected by default-->
         </select>
-        <br>
-        <br>
+        <br><br>
         <button type="button" class="btn btn-secondary" id="trackRouteUpdatesButton" disabled>Track Updates</button>
         <br>
     </div>
@@ -337,16 +336,74 @@
         <br>
         <!--dropdown to select GPX file-->
         <label for="DBQueryDropdown">Display: </label>
-        <select id="DBQueryDropdown">
+        <select id="DBQueryDropdown" onchange="showQuery()">
             <option value="" selected> </option> <!--option should not be selected by default-->
-            <option value="Query1">All routes</option>
-            <option value="Query2">Routes from specific file</option>
-            <option value="Query3">All points from a specific route</option>
-            <option value="Query4">All points from a specific file</option>
-            <option value="Query5">N shortest/longest routes from a specific file</option>
+            <option value="Q1Option">All routes</option>
+            <option value="Q2Option">Routes from specific file</option>
+            <option value="Q3Option">All points from a specific route</option>
+            <option value="Q4Option">All points from a specific file</option>
+            <option value="Q5Option">N shortest/longest routes from a specific file</option>
         </select>
         <br>
-        <br>
+        
+        <!--QUERY 1-->
+        <div id="Q1Panel">
+            <br>
+            <h3>Query 1</h3>
+            <p>Display all routes. Your UI must allow the routes to be sorted either by name or by length.</p>
+            <!--radio buttons for sort option-->
+            <form>
+                <div id="Q1SelectSortForm">
+                    <input type="radio" id="Q1NameOption" value="name" name="group1">
+                    <label for="name">Sort by name</label><br>
+                    <input type="radio" id="Q1LengthOption" value="length" name="group1">
+                    <label for="length">Sort by length</label><br>
+                </div>
+            </form>
+            <button type="button" class="btn btn-secondary" id="executeQ1Button" disabled>Execute</button>
+            <br><br>
+
+            <!--table should be scrollable-->
+            <div class="table-wrapper-scroll-y Q1TableScrollBar" id="Q1TableDiv">
+                <table id="Q1Table">
+                    <!--table headers-->
+                    <thead>
+                        <tr>
+                            <th>Route ID</th>
+                            <th>Route Name</th>
+                            <th>Route Length</th>
+                            <th>GPX ID</th>
+                        </tr>
+                    </thead>
+                    <!--Every row in tbody contains one component of the selected file, and its basic info-->
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!--QUERY 2-->
+        <div id="Q2Panel">
+            <br>
+            <h3>Query 2</h3>
+        </div>
+
+        <!--QUERY 3-->
+        <div id="Q3Panel">
+            <br>
+            <h3>Query 3</h3>
+        </div>
+
+        <!--QUERY 4-->
+        <div id="Q4Panel">
+            <br>
+            <h3>Query 4</h3>
+        </div>
+
+        <!--QUERY 5-->
+        <div id="Q5Panel">
+            <br>
+            <h3>Query 5</h3>
+        </div>
     </div>
 
     <!-- 'Logout' Panel -->
@@ -358,7 +415,8 @@
         <button type="button" class="btn btn-secondary" id="logoutButton" disabled>Logout</button>
         <br>
     </div>
-
+    
+    <br>
 
     <!-- Leave me at the bottom of body -->
     <script src="/index.js"></script>

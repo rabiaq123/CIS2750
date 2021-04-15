@@ -83,6 +83,31 @@ button[disabled], button:disabled {
     max-height: 200px;
     overflow: auto;
 }
+.Q1TableScrollBar {
+    position: relative;
+    max-height: 200px;
+    overflow: auto;
+}
+.Q2TableScrollBar {
+    position: relative;
+    max-height: 200px;
+    overflow: auto;
+}
+.Q3TableScrollBar {
+    position: relative;
+    max-height: 200px;
+    overflow: auto;
+}
+.Q4TableScrollBar {
+    position: relative;
+    max-height: 200px;
+    overflow: auto;
+}
+.Q5TableScrollBar {
+    position: relative;
+    max-height: 200px;
+    overflow: auto;
+}
 #FindPathBtwnTable {
     width:50%;
 }
