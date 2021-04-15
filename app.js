@@ -262,14 +262,13 @@ app.get('/login', async function (req, res) {
 
 //from server, get each file's version and creator, and store in database along with filename
 app.get('/storeInDB', async function (req, res) {
-    let gpxInsertID, routeInsertID;
     let fileDir, fileToJSON;
+    let filenames = [];
     let routesToJSON, routesParsed;
     let GPXdoc;
-    let record, query; //row to be added to table
+    let gpxInsertID, routeInsertID;
+    let record; //row to be added to table
     let isStored = false;
-    let filenames = [];
-
 
     //get files from server
     const dir = path.join(__dirname, 'uploads'); //directory path
@@ -304,12 +303,6 @@ app.get('/storeInDB', async function (req, res) {
             if (GPXdoc == null) continue; //invalid file
 
             //insert file into FILE table - auto-incremented gpx_id can be given value of 'null'
-            let [rows] = await connection.execute("SELECT * FROM FILE");
-            // if (rows.length == 0) {
-            //     query = "ALTER TABLE FILE AUTO_INCREMENT = " + 0;
-            //     await connection.execute(query);
-            // }
-            // else 
             record = "INSERT INTO FILE VALUES (null,'" + file + "'," + GPXdoc.version + ",'" + GPXdoc.creator + "')";
             let [rowsFILE, fieldsFILE] = await connection.execute(record);
             gpxInsertID = rowsFILE.insertId; //id of last insert (value of gpx_id) in FILE table
@@ -346,8 +339,45 @@ app.get('/storeInDB', async function (req, res) {
     }
 
     res.send({
-        isStored: isStored
+        isStored: isStored,
     });
+});
+
+
+//display count of files, routes, and points in their respective DB tables
+app.get('/displayDBStatus', async function (req,res) {
+    let numRowsFILE, numRowsROUTE, numRowsPOINT;
+    let status = 0;
+
+    try {
+        connection = await mysql.createConnection({ //wait for this shit to happen before you can move on
+            host: h,
+            user: u,
+            password: p,
+            database: db
+        });
+        //count num rows in each table
+        let [fRows] = await connection.execute("SELECT * FROM FILE");
+        numRowsFILE = fRows.length;
+        let [rRows] = await connection.execute("SELECT * FROM ROUTE");
+        numRowsROUTE = rRows.length;
+        let [pRows] = await connection.execute("SELECT * FROM POINT");
+        numRowsPOINT = pRows.length;
+    } catch (err) {
+        console.log(err);
+        status = -1;
+    } finally {
+        if (connection && connection.end) connection.end();
+    }
+
+    res.send({
+        status: status,
+        numFiles: numRowsFILE,
+        numRoutes: numRowsROUTE,
+        numPoints: numRowsPOINT
+    });
+
+    
 });
 
 
@@ -365,7 +395,6 @@ app.post('/clearDB', async function (req, res) {
         await connection.execute("DELETE FROM FILE");
         await connection.execute("DELETE FROM ROUTE");
         await connection.execute("DELETE FROM POINT");
-//        await connection.execute("SELECT * FROM FILE");
     } catch (err) {
         console.log(err);
         isCleared = false;
@@ -374,7 +403,7 @@ app.post('/clearDB', async function (req, res) {
     }
 
     res.send({
-        isCleared: isCleared
+        isCleared: isCleared,
     });
 });
 

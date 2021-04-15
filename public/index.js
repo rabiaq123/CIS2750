@@ -51,16 +51,21 @@ $(document).ready(function() {
     document.getElementById('storeAllFilesButton').onclick = function() {
         storeInDB();
     }
+    
+    //create event listener for 'Clear Database' button
+    document.getElementById('clearDataButton').onclick = function() {
+        clearDB();
+    }
+
+    //create event listener for 'Display DB Status' button 
+    document.getElementById('displayStatusButton').onclick = function() {
+        displayDBStatus();
+    }
 
     //create event listener for 'Logout' button
     document.getElementById('logoutButton').onclick = function() {
         logout();
-        setTimeout(function () { location.reload(true) }, 2000); //reload page (with 3s delay) to show logout console message
-    }
-
-    //create event listener for 'Clear Database' button
-    document.getElementById('clearDataButton').onclick = function() {
-        clearDB();
+        setTimeout(function () { location.reload() }, 2000); //reload page (with 3s delay) to show logout console message
     }
 
     //clear all text boxes on page load
@@ -380,6 +385,25 @@ A4 DB Functionality
 MYSQL Database Connection
 */
 
+
+//display database status 
+function displayDBStatus() {
+    $.ajax({
+        type: 'get',
+        dataType: 'json',
+        url: '/displayDBStatus',
+        data: {},
+        success: function (data) {
+            if (data.status == 0) alert("Database has " + data.numFiles + " files, " + data.numRoutes + " routes, and " + data.numPoints + " points.");
+            else alert("Could not display database status.");
+        },
+        fail: function (error) {
+            console.log(error);
+        }
+    });
+}
+
+
 //allow user to login to database
 function login(uname, pass, name) {
     $.ajax({
@@ -405,6 +429,7 @@ function login(uname, pass, name) {
                     $('#storeAllFilesButton').prop('disabled', false);
                     $('#trackRouteUpdatesButton').prop('disabled', false);
                 }
+                displayDBStatus();
             } else {
                 alert("Invalid credentials. Please try again.");
             }
@@ -429,7 +454,10 @@ function storeInDB() {
         url: '/storeInDB',
         data: {},
         success: function (data) {
-            if (data.isStored) console.log("Successfully stored all files in database!");
+            if (data.isStored) {
+                console.log("Successfully stored all files in database!");
+                displayDBStatus();
+            }
             else console.log("Error in storing files.");
         },
         fail: function (error) {
@@ -447,7 +475,10 @@ function clearDB() {
         url: '/clearDB',
         data: {},
         success: function (data) {
-            if (data.isCleared == true) console.log("Successfully cleared database!");
+            if (data.isCleared == true) {
+                console.log("Successfully cleared database!");
+                displayDBStatus();
+            }
         },
         fail: function (error) {
             console.log(error);
