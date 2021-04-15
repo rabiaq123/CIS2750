@@ -319,7 +319,6 @@ app.get('/storeInDB', async function (req, res) {
 
                 //insert point into POINT table - auto-incremented route_id can be given value of 'null'
                 for (let waypoint of route.waypoints) {
-                    //console.log("WAYPOINT NAME", wpt.name);
                     if (waypoint.name == "None") {
                         record = "INSERT INTO POINT VALUES (null," + waypoint.index + "," +
                             waypoint.latitude + "," + waypoint.longitude + ", null," + routeInsertID + ")";
@@ -331,7 +330,7 @@ app.get('/storeInDB', async function (req, res) {
                 }
             }
         }
-        isStored =  true;
+        if (filenames.length > 0) isStored =  true;
     } catch (err) {
         console.log(err);
     } finally {
@@ -350,7 +349,7 @@ app.get('/displayDBStatus', async function (req,res) {
     let status = 0;
 
     try {
-        connection = await mysql.createConnection({ //wait for this shit to happen before you can move on
+        connection = await mysql.createConnection({ //wait for this to happen before moving on
             host: h,
             user: u,
             password: p,
@@ -376,8 +375,6 @@ app.get('/displayDBStatus', async function (req,res) {
         numRoutes: numRowsROUTE,
         numPoints: numRowsPOINT
     });
-
-    
 });
 
 
@@ -386,7 +383,7 @@ app.post('/clearDB', async function (req, res) {
     let isCleared = true;
 
     try {
-        connection = await mysql.createConnection({ //wait for this shit to happen before you can move on
+        connection = await mysql.createConnection({ //wait for this to happen before moving on
             host: h,
             user: u,
             password: p,
@@ -404,6 +401,39 @@ app.post('/clearDB', async function (req, res) {
 
     res.send({
         isCleared: isCleared,
+    });
+});
+
+
+//execute Query 1
+app.get('/query1', async function(req, res) {
+    let sortChoice = req.query.sort; //1->name, 2->length
+    let result = [];
+    
+    try {
+        connection = await mysql.createConnection({ //wait for this to happen before moving on
+            host: h,
+            user: u,
+            password: p,
+            database: db
+        });
+
+        if (sortChoice == 1) {
+            let [rowsSortedROUTE] = await connection.execute("SELECT * FROM ROUTE ORDER BY route_name");
+            result = rowsSortedROUTE;
+        } else if (sortChoice == 2) {
+            let [rowsSortedROUTE] = await connection.execute("SELECT * FROM ROUTE ORDER BY route_len");
+            result = rowsSortedROUTE;
+        }
+        console.log("result",result);
+    } catch (err) {
+        console.log(err);
+    } finally {
+        if (connection && connection.end) connection.end();
+    }
+
+    res.send({
+        sortedRows: result
     });
 });
 

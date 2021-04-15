@@ -17,6 +17,9 @@ $(document).ready(function() {
         }
     });
 
+    //clear all text boxes on page load
+    $("input[type=text]").val('');
+
     //GPX View table should be empty on page load
     $('#GPXViewTable').append("<tr>" + "<td colspan='8'>No file selected</td>" + "</tr>");
 
@@ -65,17 +68,18 @@ $(document).ready(function() {
     //create event listener for 'Logout' button
     document.getElementById('logoutButton').onclick = function() {
         logout();
-        //disable command buttons upon logout
-        $('#clearDataButton').prop('disabled', true);
-        $('#displayStatusButton').prop('disabled', true);
-        $('#storeAllFilesButton').prop('disabled', true);
-        $('#trackRouteUpdatesButton').prop('disabled', true);
-        $('#logoutButton').prop('disabled', true);
         setTimeout(function () { location.reload() }, 2000); //reload page (with 3s delay) to show logout console message
     }
 
-    //clear all text boxes on page load
-    $("input[type=text]").val('');
+    //disable DB commmands upon logout
+    $('#clearDataButton').prop('disabled', true);
+    $('#displayStatusButton').prop('disabled', true);
+    $('#storeAllFilesButton').prop('disabled', true);
+    $('#DBTrackRouteDropdown').prop('disabled', true);
+    $('#trackRouteUpdatesButton').prop('disabled', true);
+    $('#logoutButton').prop('disabled', true);
+    //disable 'Execute Query' buttons
+    $("#DBQueryDropdown").prop("disabled", true);
     
     //hide all query panels on page load
     $('#Q1Panel').hide();
@@ -83,12 +87,11 @@ $(document).ready(function() {
     $('#Q3Panel').hide();
     $('#Q4Panel').hide();
     $('#Q5Panel').hide();
-    //disable execute query buttons upon logout
-    $('#executeQ1Button').prop('disabled', true);
-    $('#executeQ2Button').prop('disabled', true);
-    $('#executeQ3Button').prop('disabled', true);
-    $('#executeQ4Button').prop('disabled', true);
-    $('#executeQ5Button').prop('disabled', true);
+
+    //create event listener for 'Execute' button for Query 1
+    document.getElementById('executeQ1Button').onclick = function () {
+        executeQuery1();
+    }
 });
 
 
@@ -442,11 +445,11 @@ function login(uname, pass, name) {
                 $('#clearDataButton').prop('disabled', false);
                 $('#displayStatusButton').prop('disabled', false);
                 $('#logoutButton').prop('disabled', false);
-                //keep UI elements for updating files in DB disabled, if no files available
+                //enable UI elements for updating files in DB, if there are files on the server
                 let numFiles = $('#GPXViewDropdown').children('option').length;
                 if (numFiles > 0) { //this functionality needs files to be on the server
                     $('#storeAllFilesButton').prop('disabled', false);
-                    $('#trackRouteUpdatesButton').prop('disabled', false);
+                    $("#DBTrackRouteDropdown").prop("disabled", false);
                 }
                 displayDBStatus();
             } else {
@@ -475,9 +478,10 @@ function storeInDB() {
         success: function (data) {
             if (data.isStored) {
                 console.log("Successfully stored all files in database!");
+                $("#DBQueryDropdown").prop("disabled", false);
                 displayDBStatus();
             }
-            else console.log("Error in storing files.");
+            else console.log("Error in storing files - there may be no files on the server.");
         },
         fail: function (error) {
             console.log(error);
@@ -497,6 +501,7 @@ function clearDB() {
             if (data.isCleared == true) {
                 console.log("Successfully cleared database!");
                 displayDBStatus();
+                $('#trackRouteUpdatesButton').prop('disabled', true);
             }
         },
         fail: function (error) {
@@ -506,93 +511,136 @@ function clearDB() {
 }
 
 
+//track route updates 
+function trackRouteUpdates() {
+    if ($('#DBTrackRouteDropdown option:selected').val() != "") {
+        //enable 'Track Route Updates' button if DB is storing files
+        $.ajax({
+            type: 'get',
+            dataType: 'json',
+            url: '/displayDBStatus',
+            data: {},
+            success: function (data) {
+                if (data.numFiles > 0) $('#trackRouteUpdatesButton').prop('disabled', false);
+            },
+            fail: function (error) {
+                console.log(error);
+            }
+        });
+    } else {
+        $('#trackRouteUpdatesButton').prop('disabled', true);
+    }
+}
+
+
+
 //show query panel of query selected from Query Panel dropdown 
 function showQuery() {
     let chosenQuery = $('#DBQueryDropdown option:selected').val();
     
-    $("#Q1Table tbody tr").remove();
     $('#Q1Panel').hide();
-    $("#Q2Table tbody tr").remove();
     $('#Q2Panel').hide();
-    $("#Q3Table tbody tr").remove();
     $('#Q3Panel').hide();
-    $("#Q4Table tbody tr").remove();
     $('#Q4Panel').hide();
-    $("#Q5Table tbody tr").remove();
     $('#Q5Panel').hide();
-
-    if (chosenQuery == "Q1Option") enableQuery('#executeQ1Button');
-    else if (chosenQuery == "Q2Option") enableQuery('#executeQ1Button');
-    else if (chosenQuery == "Q3Option") enableQuery('#executeQ1Button');
-    else if (chosenQuery == "Q4Option") enableQuery('#executeQ1Button');
-    else if (chosenQuery == "Q5Option") enableQuery('#executeQ1Button');
+    $("#Q1Table tbody tr").remove();
+    $("#Q2Table tbody tr").remove();
+    $("#Q3Table tbody tr").remove();
+    $("#Q4Table tbody tr").remove();
+    $("#Q5Table tbody tr").remove();
+    
+    if (chosenQuery == "Q1Option") {
+        $('#Q1Panel').show();
+        enableQuery('#executeQ1Button');
+    }
+    else if (chosenQuery == "Q2Option") {
+        $('#Q2Panel').show();
+        enableQuery('#executeQ2Button');
+    }
+    else if (chosenQuery == "Q3Option") {
+        $('#Q3Panel').show();
+        enableQuery('#executeQ3Button');
+    }
+    else if (chosenQuery == "Q4Option") {
+        $('#Q4Panel').show();
+        enableQuery('#executeQ4Button');
+    }
+    else if (chosenQuery == "Q5Option") {
+        $('#Q5Panel').show();
+        enableQuery('#executeQ5Button');
+    } 
 }
 
 
 //enable Query 1 - show panel, enable 'Execute' button if server has files
-function enableQuery(enableQueryButton) {
-    $('#Q1Panel').show();
-    $("#Q1Table tbody tr").remove(); //clear (all table rows) within <tbody/> before adding new rows for new file
-    
+function enableQuery(queryButton) {
+    $(queryButton).prop('disabled', true);
+
     $.ajax({
         type: 'get',
         dataType: 'json',
         url: '/getGPXFilesInUploadsDir',
         data: {},
         success: function(data) {
-            if (data.filenames.length > 0) $(enableQueryButton).prop('disabled', false);
+            if (data.filenames.length > 0) $(queryButton).prop('disabled', false);
+            $('#Q1Table').append("<tr>" + "<td colspan='4'>Nothing to display</td>" + "</tr>"); //until 'Execute' button is clicked
+        },
+        fail: function(error) {
+            console.log(error);
         }
     })
-    
-    // let sortChoice = 0; //1 -> name, 2 -> length, 0 -> neither
-    // if ($('#Q1NameOption').is(':checked')) sortChoice = 1;
-    // else if ($('#Q1SortOption').is(':checked')) sortChoice = 2;
+}
 
-    // if (sortChoice == 1 || sortChoice == 2) {
-    //     $.ajax({
-    //         type: 'get',
-    //         dataType: 'json',
-    //         url: '/query1',
-    //         data: {
-    //             sort: sortChoice
-    //         },
-    //         success: function (data) {
-    //             if (data.isLoggedOut == true) console.log("Successfully logged out of database!");
-    //         },
-    //         fail: function (error) {
-    //             console.log(error);
-    //         }
-    //     });
-    // }
 
-    // if (GPXobj.routesList.length == 0 && GPXobj.tracksList.length == 0) {
-    //     $('#GPXViewTable').append("<tr>" + "<td colspan='8'>No routes/tracks to be displayed</td>" + "</tr>");
-    //     return;
-    // }
+//execute Query 1
+function executeQuery1() {
+    let sortChoice = 0; //1->name, 2->length, 0->neither
+    if ($('#Q1NameOption').is(':checked')) sortChoice = 1;
+    else if ($('#Q1LengthOption').is(':checked')) sortChoice = 2;
+
+    $.ajax({
+        type: 'get',
+        dataType: 'json',
+        url: '/query1',
+        data: {
+            sort: sortChoice
+        },
+        success: function (data) {           
+            //display sorted results in table
+            for (let row of data.sortedRows) {
+                $('#Q1Table').append("<tr>" + 
+                    "<td>" + row.route_id + "</td>" +
+                    "<td>" + row.route_name + "</td>" +
+                    "<td>" + row.route_len + "</td>" +
+                    "<td>" + row.gpx_id + "</td>" +
+                    "</tr>");
+            }
+            console.log("Successfully executed Query 1!");
+        },
+        fail: function (error) {
+            console.log(error);
+        }
+    })
 }
 
 
 //execute Query 2
-function executeQuery2(chosenQuery) {
-    $('#Q2Panel').show();
+function executeQuery2() {
 }
 
 
 //execute Query 3
-function executeQuery3(chosenQuery) {
-    $('#Q3Panel').show();
+function executeQuery3() {
 }
 
 
 //execute Query 4
-function executeQuery4(chosenQuery) {
-    $('#Q4Panel').show();
+function executeQuery4() {
 }
 
 
 //execute Query 5
-function executeQuery5(chosenQuery) {
-    $('#Q5Panel').show();
+function executeQuery5() {
 }
 
 
