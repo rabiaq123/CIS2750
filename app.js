@@ -221,6 +221,7 @@ app.get('/login', async function (req, res) {
     let pass = req.query.pass;
     let name = req.query.name;
     let connected = true;
+    let filledRows;
 
     try {
         /*
@@ -246,6 +247,8 @@ app.get('/login', async function (req, res) {
         await connection.execute("CREATE TABLE IF NOT EXISTS FILE (gpx_id INT AUTO_INCREMENT, file_name VARCHAR(60) NOT NULL, ver DECIMAL(2,1) NOT NULL, creator VARCHAR(256) NOT NULL, PRIMARY KEY(gpx_id) )");
         await connection.execute("CREATE TABLE IF NOT EXISTS ROUTE (route_id INT AUTO_INCREMENT, route_name VARCHAR(256), route_len FLOAT(15,7) NOT NULL, gpx_id INT NOT NULL, PRIMARY KEY(route_id), FOREIGN KEY(gpx_id) REFERENCES FILE(gpx_id) ON DELETE CASCADE )");
         await connection.execute("CREATE TABLE IF NOT EXISTS POINT (point_id INT AUTO_INCREMENT, point_index INT NOT NULL, latitude DECIMAL(11,7) NOT NULL, longitude DECIMAL(11,7) NOT NULL, point_name VARCHAR(256), route_id INT NOT NULL, PRIMARY KEY(point_id), FOREIGN KEY(route_id) REFERENCES ROUTE(route_id) ON DELETE CASCADE )");
+        let [rows] = await connection.execute("SELECT * FROM FILE");
+        filledRows = rows.length;
     } catch (e) { //error handling for creating database connection
         connected = false;
         console.log(e);
@@ -255,7 +258,8 @@ app.get('/login', async function (req, res) {
 
     //return whether login was successful
     res.send({
-        loginStatus: connected
+        loginStatus: connected,
+        filledRows: filledRows
     });
 });
 
@@ -425,7 +429,6 @@ app.get('/query1', async function(req, res) {
             let [rowsSortedROUTE] = await connection.execute("SELECT * FROM ROUTE ORDER BY route_len");
             result = rowsSortedROUTE;
         }
-        console.log("result",result);
     } catch (err) {
         console.log(err);
     } finally {

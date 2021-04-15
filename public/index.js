@@ -441,17 +441,19 @@ function login(uname, pass, name) {
             //ensures invalid files do not get displayed
             if (data.loginStatus == true) {
                 console.log("Successfully created connection to database:", name);
+                displayDBStatus();
                 //make clickable upon login, as DB tables are also created by then
                 $('#clearDataButton').prop('disabled', false);
                 $('#displayStatusButton').prop('disabled', false);
                 $('#logoutButton').prop('disabled', false);
-                //enable UI elements for updating files in DB, if there are files on the server
+                //enable UI elements for updating DB, if there are files on the server
                 let numFiles = $('#GPXViewDropdown').children('option').length;
                 if (numFiles > 0) { //this functionality needs files to be on the server
                     $('#storeAllFilesButton').prop('disabled', false);
                     $("#DBTrackRouteDropdown").prop("disabled", false);
                 }
-                displayDBStatus();
+                //allow execute query commands if DB is already filled
+                if (data.filledRows > 0) $("#DBQueryDropdown").prop("disabled", false);
             } else {
                 alert("Invalid credentials. Please try again.");
             }
@@ -478,8 +480,8 @@ function storeInDB() {
         success: function (data) {
             if (data.isStored) {
                 console.log("Successfully stored all files in database!");
-                $("#DBQueryDropdown").prop("disabled", false);
                 displayDBStatus();
+                $("#DBQueryDropdown").prop("disabled", false);
             }
             else console.log("Error in storing files - there may be no files on the server.");
         },
@@ -513,7 +515,10 @@ function clearDB() {
 
 //track route updates 
 function trackRouteUpdates() {
-    if ($('#DBTrackRouteDropdown option:selected').val() != "") {
+    if ($('#DBTrackRouteDropdown option:selected').val() == "") {
+        $('#trackRouteUpdatesButton').prop('disabled', true);
+    }
+    else {
         //enable 'Track Route Updates' button if DB is storing files
         $.ajax({
             type: 'get',
@@ -527,11 +532,8 @@ function trackRouteUpdates() {
                 console.log(error);
             }
         });
-    } else {
-        $('#trackRouteUpdatesButton').prop('disabled', true);
     }
 }
-
 
 
 //show query panel of query selected from Query Panel dropdown 
@@ -551,29 +553,29 @@ function showQuery() {
     
     if (chosenQuery == "Q1Option") {
         $('#Q1Panel').show();
-        enableQuery('#executeQ1Button');
+        enableQuery('#executeQ1Button', '#Q1Table');
     }
     else if (chosenQuery == "Q2Option") {
         $('#Q2Panel').show();
-        enableQuery('#executeQ2Button');
+        enableQuery('#executeQ2Button', '#Q2Table');
     }
     else if (chosenQuery == "Q3Option") {
         $('#Q3Panel').show();
-        enableQuery('#executeQ3Button');
+        enableQuery('#executeQ3Button', '#Q3Table');
     }
     else if (chosenQuery == "Q4Option") {
         $('#Q4Panel').show();
-        enableQuery('#executeQ4Button');
+        enableQuery('#executeQ4Button', '#Q4Table');
     }
     else if (chosenQuery == "Q5Option") {
         $('#Q5Panel').show();
-        enableQuery('#executeQ5Button');
+        enableQuery('#executeQ5Button', '#Q5Table');
     } 
 }
 
 
 //enable Query 1 - show panel, enable 'Execute' button if server has files
-function enableQuery(queryButton) {
+function enableQuery(queryButton, queryTable) {
     $(queryButton).prop('disabled', true);
 
     $.ajax({
@@ -583,7 +585,7 @@ function enableQuery(queryButton) {
         data: {},
         success: function(data) {
             if (data.filenames.length > 0) $(queryButton).prop('disabled', false);
-            $('#Q1Table').append("<tr>" + "<td colspan='4'>Nothing to display</td>" + "</tr>"); //until 'Execute' button is clicked
+            $(queryTable).append("<tr>" + "<td colspan='4'>Nothing to display</td>" + "</tr>"); //until 'Execute' button is clicked
         },
         fail: function(error) {
             console.log(error);
@@ -606,11 +608,17 @@ function executeQuery1() {
             sort: sortChoice
         },
         success: function (data) {           
+            //clear (all table rows) within <tbody/> before adding new rows for new Query
+            $("#Q1Table tbody tr").remove();
+
             //display sorted results in table
+            let routeName;
             for (let row of data.sortedRows) {
+                routeName = row.route_name;
+                if (!routeName) routeName = "[no name for route " + row.route_id + "]";
                 $('#Q1Table').append("<tr>" + 
                     "<td>" + row.route_id + "</td>" +
-                    "<td>" + row.route_name + "</td>" +
+                    "<td>" + routeName + "</td>" +
                     "<td>" + row.route_len + "</td>" +
                     "<td>" + row.gpx_id + "</td>" +
                     "</tr>");
