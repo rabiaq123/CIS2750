@@ -322,7 +322,6 @@ function updateComponent(flag, counter) {
     else name = $('#entryBox' + 'T' + counter).val();
     let chosenFile = $('#GPXViewDropdown option:selected').val();
     let index = counter - 1;
-    //console.log("UPDATE Component", flag, " ", index, " ", name, " ");
 
     $.ajax({
         type: 'get',                   //Request type
