@@ -54,6 +54,11 @@ $(document).ready(function() {
     document.getElementById('storeAllFilesButton').onclick = function() {
         storeInDB();
     }
+
+    //create event listener for 'Track Route Updates' button
+    document.getElementById('trackRouteUpdatesButton').onclick = function() {
+        trackRouteUpdates();
+    }
     
     //create event listener for 'Clear Database' button
     document.getElementById('clearDataButton').onclick = function() {
@@ -485,8 +490,6 @@ for each filename in the array of filenames, create a GPXdoc struct
 insert the filename and its corresponding GPXdoc struct's related info (filename, version, creator) into table
 */
 function storeInDB() {
-    let i = 0;
-
     $.ajax({
         type: 'get',
         dataType: 'json',
@@ -495,7 +498,6 @@ function storeInDB() {
         success: function (data) {
             if (data.isStored) {
                 console.log("Successfully stored all files in database!");
-                console.log("ROUTES STORED", data.routesStored);
                 displayDBStatus();
                 $("#DBQueryDropdown").prop("disabled", false);
                 //add files and routes in server to respective dropdowns
@@ -536,8 +538,8 @@ function clearDB() {
 }
 
 
-//track route updates 
-function trackRouteUpdates() {
+//enable track route updates button
+function enableTrackRouteUpdates() {
     if ($('#DBTrackRouteDropdown option:selected').val() == "") {
         $('#trackRouteUpdatesButton').prop('disabled', true);
     }
@@ -556,6 +558,37 @@ function trackRouteUpdates() {
             }
         });
     }
+}
+
+
+//track route updates
+function trackRouteUpdates() {
+    $.ajax({
+        type: 'get',
+        dataType: 'json',
+        url: '/updateDB',
+        data: {},
+        success: function (data) {
+            if (data.isStored) {
+                console.log("Successfully updated database!");
+                displayDBStatus();
+                $("#DBQueryDropdown").prop("disabled", false);
+                //add files and routes in server to respective dropdowns
+                let i = 0;
+                for (let file of data.filesStored) $('#Q2FileDropdown').append(new Option(file.file_name, file.file_name));
+                for (let route of data.routesStored) {
+                    let routeName = route.route_name;
+                    if (!routeName) routeName = "[no named route]" + i;
+                    $('#Q3RouteDropdown').append(new Option(routeName, route.route_id));
+                    i++;
+                }
+            }
+            else console.log("Error in storing files - there may be no files on the server.");
+        },
+        fail: function (error) {
+            console.log(error);
+        }
+    });
 }
 
 

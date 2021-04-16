@@ -418,6 +418,102 @@ app.post('/clearDB', async function (req, res) {
 });
 
 
+//update database when file gets changed on server
+app.get('/updateDB', async function (req, res) {
+    let fileDir, fileToJSON;
+    let filenames = [];
+    let routesToJSON, routesParsed;
+    let GPXdoc;
+    let gpxInsertID, routeInsertID;
+    let record; //row to be added to table
+    let filesStored = [], routesStored = [], pointsStored = [];
+    let isStored = false;
+
+    //get files from server
+    const dir = path.join(__dirname, 'uploads'); //directory path
+    fs.readdir(dir, async function (error, files) {
+        if (error) throw (error);
+        files.forEach(async function (file) {
+            filenames.push(file);
+        });
+    });
+
+    try {
+        connection = await mysql.createConnection({
+            host: h,
+            user: u,
+            password: p,
+            database: db
+        });
+
+        await connection.execute("DELETE FROM FILE");
+        await connection.execute("DELETE FROM ROUTE");
+        await connection.execute("DELETE FROM POINT");
+
+        for (let file of filenames) {
+            //check if file is already in FILE table 
+            let [duplicatesFILE] = await connection.execute("SELECT * FROM FILE WHERE FILE.file_name='" + file + "'");
+            if (duplicatesFILE && duplicatesFILE.length > 0) {
+                console.log("File", file, "already exists in database");
+                continue;
+            }
+            fileDir = "./uploads/" + file;
+
+            //obtain version and creator of each file
+            fileToJSON = GPXParserLib.GPXFileToJSON(fileDir);
+            GPXdoc = JSON.parse(fileToJSON);
+            if (GPXdoc == null) continue; //invalid file
+
+            //insert file into FILE table - auto-incremented gpx_id can be given value of 'null'
+            record = "INSERT INTO FILE VALUES (null,'" + file + "'," + GPXdoc.version + ",'" + GPXdoc.creator + "')";
+            let [rowsFILE, fieldsFILE] = await connection.execute(record);
+            gpxInsertID = rowsFILE.insertId; //id of last insert (value of gpx_id) in FILE table
+
+            //obtain relevant information regarding each of file's routes and each route's waypoints
+            routesToJSON = GPXParserLib.getAllRouteComponentsJSON(fileDir);
+            routesParsed = JSON.parse(routesToJSON);
+            for (let route of routesParsed) {
+                //insert route into ROUTE table 
+                if (route.name == "None") record = "INSERT INTO ROUTE VALUES (null, null," + route.len + "," + gpxInsertID + ")";
+                else record = "INSERT INTO ROUTE VALUES (null,'" + route.name + "'," + route.len + "," + gpxInsertID + ")";
+                let [rowsROUTE, fieldsROUTE] = await connection.execute(record);
+                routeInsertID = rowsROUTE.insertId; //id of last insert (value of route_id) in ROUTE table
+
+                //insert point into POINT table - auto-incremented route_id can be given value of 'null'
+                for (let waypoint of route.waypoints) {
+                    if (waypoint.name == "None") {
+                        record = "INSERT INTO POINT VALUES (null," + waypoint.index + "," +
+                            waypoint.latitude + "," + waypoint.longitude + ", null," + routeInsertID + ")";
+                    } else {
+                        record = "INSERT INTO POINT VALUES (null," + waypoint.index + "," +
+                            waypoint.latitude + "," + waypoint.longitude + ",'" + waypoint.name + "'," + routeInsertID + ")";
+                    }
+                    let [rowsPOINT, fieldsPOINT] = await connection.execute(record);
+                }
+            }
+        }
+        let [allFILE] = await connection.execute("SELECT * FROM FILE");
+        let [allROUTE] = await connection.execute("SELECT * FROM ROUTE");
+        let [allPOINT] = await connection.execute("SELECT * FROM POINT");
+        filesStored = allFILE;
+        routesStored = allROUTE;
+        pointsStored = allPOINT;
+        if (filesStored.length > 0) isStored = true;
+    } catch (err) {
+        console.log(err);
+    } finally {
+        if (connection && connection.end) connection.end();
+    }
+
+    res.send({
+        isStored: isStored,
+        filesStored: filesStored,
+        routesStored: routesStored,
+        pointsStored: pointsStored
+    });
+});
+
+
 //execute Query 1
 app.get('/query1', async function(req, res) {
     let sortChoice = req.query.sort; //1->name, 2->length
