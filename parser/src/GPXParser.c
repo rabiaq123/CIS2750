@@ -114,10 +114,9 @@ bool updateComponentName(char *fileDir, int compFlag, int index, char *newName) 
     //validate GPX doc struct and write to file
     isValidGPXdoc = validateGPXDoc(doc, "./parser/gpx.xsd");
     if (isValidGPXdoc) {
-        //if (remove(fileDir) == 0) { //delete the file
+        if (remove(fileDir) == 0) { //delete the file
             isUpdated = writeGPXdoc(doc, fileDir);
-            //printf("isvalid\n");
-        //}
+        }
     }
 
     deleteGPXdoc(doc);

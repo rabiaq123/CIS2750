@@ -292,7 +292,15 @@ app.get('/storeInDB', async function (req, res) {
             database: db
         });
 
+        let i = 0;
         for (let file of filenames) {
+            if (i == 0) {
+                await connection.execute("ALTER TABLE FILE AUTO_INCREMENT = 1");
+                await connection.execute("ALTER TABLE ROUTE AUTO_INCREMENT = 1");
+                await connection.execute("ALTER TABLE POINT AUTO_INCREMENT = 1");
+            }
+            i++;
+
             //check if file is already in FILE table 
             let [duplicatesFILE] = await connection.execute("SELECT * FROM FILE WHERE FILE.file_name='" + file + "'");
             if (duplicatesFILE && duplicatesFILE.length > 0) {
@@ -450,8 +458,16 @@ app.get('/updateDB', async function (req, res) {
         await connection.execute("DELETE FROM ROUTE");
         await connection.execute("DELETE FROM POINT");
 
+        let i = 0;
         for (let file of filenames) {
-            //check if file is already in FILE table 
+            if (i == 0) {
+                await connection.execute("ALTER TABLE FILE AUTO_INCREMENT = 1");
+                await connection.execute("ALTER TABLE ROUTE AUTO_INCREMENT = 1");
+                await connection.execute("ALTER TABLE POINT AUTO_INCREMENT = 1");
+            }
+            i++;
+
+            //check if file is already in FILE table
             let [duplicatesFILE] = await connection.execute("SELECT * FROM FILE WHERE FILE.file_name='" + file + "'");
             if (duplicatesFILE && duplicatesFILE.length > 0) {
                 console.log("File", file, "already exists in database");

@@ -233,9 +233,10 @@ function addAllComponentsToGPXViewTable(GPXobj) {
                     "</form>" +
                 "</td>" +
                 "<td>" +
-                    "<form ref='renameForm' id='renameForm'>" +
+                    "<form ref='renameForm' id='renameForm' onsubmit='return false'>" +
                         "<div class='form-group'>" +
-                        "<input type='submit' class='btn btn-secondary' value='Submit'>" +
+                            "<input type='submit' class='btn btn-secondary' value='Submit' " +
+                                "onclick='updateComponent(" + 1 + ", " + counter + ")'>" +
                         "</div>" +
                     "</form>" +
                 "</td>" +
@@ -578,7 +579,7 @@ function trackRouteUpdates() {
                 for (let file of data.filesStored) $('#Q2FileDropdown').append(new Option(file.file_name, file.file_name));
                 for (let route of data.routesStored) {
                     let routeName = route.route_name;
-                    if (!routeName) routeName = "[no named route]" + i;
+                    if (!routeName) routeName = "[no named route # " + i + "]";
                     $('#Q3RouteDropdown').append(new Option(routeName, route.route_id));
                     i++;
                 }
