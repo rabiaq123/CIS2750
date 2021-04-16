@@ -109,6 +109,11 @@ $(document).ready(function() {
         executeQuery3();
     }
 
+    //create event listener for 'Execute' button for Query 4
+    document.getElementById('executeQ4Button').onclick = function() {
+        executeQuery4();
+    }
+
 
 });
 
@@ -501,14 +506,19 @@ function storeInDB() {
                 displayDBStatus();
                 $("#DBQueryDropdown").prop("disabled", false);
                 //add files and routes in server to respective dropdowns
-                for (let file of data.filesStored) $('#Q2FileDropdown').append(new Option(file.file_name, file.file_name));
+                for (let file of data.filesStored) {
+                    $('#Q2FileDropdown').append(new Option(file.file_name, file.file_name));
+                    $('#Q4FileDropdown').append(new Option(file.file_name, file.file_name));
+                }
+                let i = 1;
                 for (let route of data.routesStored) {
                     let routeName = route.route_name;
-                    if (!routeName) routeName = "[no named route]";
+                    if (!routeName) routeName = "[no named route " + i + "]";
                     $('#Q3RouteDropdown').append(new Option(routeName, route.route_id));
+                    i++;
                 }
             }
-            else console.log("Error in storing files - there may be no files on the server.");
+            else console.log("Error in storing files - the server may not have any files.");
         },
         fail: function (error) {
             console.log(error);
@@ -753,7 +763,6 @@ function executeQuery3() {
                         "</tr>");
                 }
                 if (data.sortedPoints.length == 0) $('#Q3Table').append("<tr>" + "<td colspan='6'>No points</td>" + "</tr>");
-    
                 console.log("Successfully executed Query 3!");
             },
             fail: function (error) {
@@ -766,6 +775,56 @@ function executeQuery3() {
 
 //execute Query 4
 function executeQuery4() {
+    let filename = $('#Q4FileDropdown option:selected').val();
+    let sortChoice = 0; //1->name, 2->length, 0->neither
+
+    //clear (all table rows) within <tbody/> before adding new rows for new Query
+    $("#Q4Table tbody tr").remove();
+
+    if ($('#Q4NameOption').is(':checked')) sortChoice = 1;
+    else if ($('#Q4LengthOption').is(':checked')) sortChoice = 2;
+
+    if (filename != "") {
+        $.ajax({
+            type: 'get',
+            dataType: 'json',
+            url: '/query4',
+            data: {
+                sort: sortChoice,
+                file: filename
+            },
+            success: function (data) {
+                //sort routes
+                let routeName;
+                for (let route of data.sortedRoutes) {
+                    let i = 0;
+                    let flag = 0; //0->first point in route
+                    let pointHTML = [];
+                    for (let point of data.sortedPoints) {
+                        if (i == 0 && flag == 0) {
+                            pointHTML.push("<td>" + point.point_index + "</td>" +
+                                "<td>" + point.latitude + "</td>" +
+                                "<td>" + point.longitude + "</td>");
+                            flag = 1;
+                        }
+                        pointHTML.push(pointHTML);
+                    }
+                    routeName = route.route_name;
+                    if (!routeName) routeName = "[no name for route " + route.route_id + "]";
+                    $('#Q4Table').append("<tr>" +
+                        "<td>" + routeName + "</td>" +
+                        "<td>" + route.route_len + "</td>" +
+                        pointHTML +
+                        "</tr>");
+                }
+                if (data.sortedRoutes.length == 0) $('#Q4Table').append("<tr>" + "<td colspan='8'>No points</td>" + "</tr>");
+                console.log("Successfully executed Query 4!");
+            },
+            fail: function (error) {
+                console.log(error);
+            }
+        })
+    }
 }
 
 

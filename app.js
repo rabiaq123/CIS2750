@@ -627,6 +627,48 @@ app.get('/query3', async function (req, res) {
 });
 
 
+//execute Query 4
+app.get('/query4', async function (req, res) {
+    let sortChoice = req.query.sort; //1->name, 2->length
+    let filename = req.query.file;
+    let sortedRoutes = [], sortedPoints = [];
+
+    try {
+        connection = await mysql.createConnection({ //wait for this to happen before moving on
+            host: h,
+            user: u,
+            password: p,
+            database: db
+        });
+
+        //get GPX ID of filename
+        let [result] = await connection.execute("SELECT * FROM FILE WHERE file_name='" + filename + "'");
+        let gpxID = result[0].gpx_id;
+
+        if (sortChoice == 1) {
+            let [rowsSortedROUTE] = await connection.execute("SELECT * FROM ROUTE WHERE gpx_id=" + gpxID + " ORDER BY route_name");
+            sortedRoutes = rowsSortedROUTE;            
+        } else if (sortChoice == 2) {
+            let [rowsSortedROUTE] = await connection.execute("SELECT * FROM ROUTE WHERE gpx_id=" + gpxID + " ORDER BY route_len");
+            sortedRoutes = rowsSortedROUTE;
+        }
+        for (let i = 0; i < sortedRoutes.length; i++) {
+            let routeID = sortedRoutes[i].route_id
+            let [rowsSortedPOINT] = await connection.execute("SELECT * FROM POINT WHERE route_id=" + routeID + " ORDER BY point_index");
+            sortedPoints.push(...rowsSortedPOINT); //append to list of sortedPoints
+        }
+    } catch (err) {
+        console.log(err);
+    } finally {
+        if (connection && connection.end) connection.end();
+    }
+
+    res.send({
+        sortedRoutes: sortedRoutes,
+        sortedPoints: sortedPoints
+    });
+});
+
 
 //log user out of database of connection still present
 app.get('/logout', async function (req, res) {

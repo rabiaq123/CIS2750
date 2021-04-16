@@ -405,7 +405,7 @@
             <button type="button" class="btn btn-secondary" id="executeQ2Button" disabled>Execute</button>
             <br><br>
             <!--table should be scrollable-->
-            <div class="table-wrapper-scroll-y Q1TableScrollBar" id="Q2TableDiv">
+            <div class="table-wrapper-scroll-y Q2TableScrollBar" id="Q2TableDiv">
                 <table id="Q2Table" class="queryTable">
                     <!--table headers-->
                     <thead>
@@ -436,7 +436,7 @@
             <button type="button" class="btn btn-secondary" id="executeQ3Button" disabled>Execute</button>
             <br><br>
             <!--table should be scrollable-->
-            <div class="table-wrapper-scroll-y Q1TableScrollBar" id="Q3TableDiv">
+            <div class="table-wrapper-scroll-y Q3TableScrollBar" id="Q3TableDiv">
                 <table id="Q3Table" class="queryTable">
                     <!--table headers-->
                     <thead>
@@ -452,13 +452,50 @@
                     <tbody></tbody>
                 </table>
             </div>
-
         </div>
 
         <!--QUERY 4-->
         <div id="Q4Panel">
             <br>
             <h3>Query 4</h3>
+            <p>Display all points from a specific file. Allow the user to order them by them by route name or route length. For every
+            route, individual points need to be ordered by point index. If routes have no names, you can order them in as you see
+            fit, and give routes unique labels, e.g. "Unnamed route 1", "unnamed route 2", etc.</p>
+            <!--dropdown to select GPX file from database-->
+            <label for="Q4FileDropdown">Choose file in database: </label>
+            <select id="Q4FileDropdown">
+                <option value="" selected> </option> <!--option should not be selected by default-->
+            </select>
+            <br>
+            <!--radio buttons for sort option-->
+            <form>
+                <div id="Q4SelectSortForm">
+                    <input type="radio" id="Q4NameOption" value="name" name="group4">
+                    <label for="name">Sort by name</label><br>
+                    <input type="radio" id="Q4LengthOption" value="length" name="group4">
+                    <label for="length">Sort by length</label><br>
+                </div>
+            </form>
+            <br>
+            <button type="button" class="btn btn-secondary" id="executeQ4Button" disabled>Execute</button>
+            <br><br>
+            <!--table should be scrollable-->
+            <div class="table-wrapper-scroll-y Q4TableScrollBar" id="Q4TableDiv">
+                <table id="Q4Table" class="queryTable">
+                    <!--table headers-->
+                    <thead>
+                        <tr>
+                            <th>Route Name</th>
+                            <th>Route Length</tH>
+                            <th>Point Index</th>
+                            <th>Latitude</th>
+                            <th>Longitude</th>
+                        </tr>
+                    </thead>
+                    <!--Every row in tbody contains one component of the selected file, and its basic info-->
+                    <tbody></tbody>
+                </table>
+            </div>
         </div>
 
         <!--QUERY 5-->
