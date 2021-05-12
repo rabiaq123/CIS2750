@@ -11,15 +11,21 @@ int main() {
     GPXdoc* doc = NULL;
     char* GPXstring;
     char file[] = "/home/undergrad/0/rqureshi/Desktop/W21/CIS2750/SampleGPXfiles/simple.gpx";
+    char schema[] = "/home/undergrad/0/rqureshi/Desktop/W21/CIS2750/A2-files/gpx.xsd";
 
     //attempt to parse XML file
-    doc = createGPXdoc(file);
+    doc = createValidGPXdoc(file, schema);
 
     if (doc == NULL) { //error-checking
         printf("Error: could not parse file %s\n", file);
         return 0;
     }
-    
+
+    if (!validateGPXDoc(doc, schema)) {
+        printf("invalid GPX\n");
+    }
+    writeGPXdoc(doc, "/home/undergrad/0/rqureshi/Desktop/W21/CIS2750/SampleGPXfiles/doc.gpx");
+
     GPXstring = GPXdocToString(doc);
     /*
     printf(GPXstring);

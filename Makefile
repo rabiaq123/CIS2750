@@ -31,16 +31,23 @@ $(BIN)liblist.so: $(BIN)LinkedListAPI.o
 $(BIN)LinkedListAPI.o: $(SRC)LinkedListAPI.c $(INC)LinkedListAPI.h
 	$(CC) $(CFLAGS) -c -fpic -I$(INC) $(SRC)LinkedListAPI.c -o $(BIN)LinkedListAPI.o
 
+#Added target for main tester file
+mainTester: $(BIN)mainTester.o $(BIN)GPXParser.o $(BIN)liblist.so $(BIN)libgpxparser.so
+	$(CC) $(CFLAGS) -I$(XML_PATH) $(LDFLAGS) -L$(BIN) -o $(BIN)mainTester $(BIN)mainTester.o $(BIN)GPXParser.o -lxml2 -lm -llist
+	
+$(BIN)mainTester.o: $(SRC)mainTester.c $(SRC)GPXParser.c
+	$(CC) $(CFLAGS) -I$(XML_PATH) -I$(INC) -c $(SRC)mainTester.c -o $(BIN)mainTester.o
+
+#Added component for main
 clean:
-	rm -rf $(BIN)StructListDemo $(BIN)xmlExample $(BIN)*.o $(BIN)*.so
+	rm -rf $(BIN)StructListDemo $(BIN)xmlExample $(BIN)mainTester $(BIN)*.o $(BIN)*.so
 
 #This is the target for the in-class XML example
 xmlExample: $(SRC)libXmlExample.c
 	$(CC) $(CFLAGS) -I$(XML_PATH) $(SRC)libXmlExample.c -lxml2 -o $(BIN)xmlExample
 
 #These are sample targets for the list demo code incldued in the class examples.  They will not be used
-#for A1, but they can help you figure out who to set up a target for your own test main
-
+#for A1, but they can help you figure out how to set up a target for your own test main
 StructListDemo: $(BIN)StructListDemo.o $(BIN)liblist.so
 	$(CC) $(CFLAGS) $(LDFLAGS) -L$(BIN) -o $(BIN)StructListDemo $(BIN)StructListDemo.o  -llist
 	
