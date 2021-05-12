@@ -18,9 +18,17 @@
     <!-- Custom CSS End -->
     <link rel="shortcut icon" href="#">
 </head>
+
 <body>
-    <h1 class="w3-panel">GPS Data Viewer</h1>
-    
+    <div class="w3-panel">
+        <h1>GPS Data Viewer</h1>
+        <hr>
+    </div>
+    <div class="w3-panel" id="A3Panel">
+        <h2><span>A3 Functionality</span></h2>
+        <a href="#A4Panel">Go to A4 functionality...</a>
+    </div>
+
     <!-----------------
         FILE LOG PANEL
     ------------------>
@@ -85,7 +93,7 @@
                         <th># of Points</th>
                         <th>Length</th>
                         <th>Loop</th>
-                        <th colspan="2">Rename Component</th>
+                        <th colspan="2">Rename Component</th> <!--2 columns added here, but they're merged for header-->
                         <th>View Other Data</th> <!--have a button in each row that creates alert with otherData string-->
                     </tr>
                 </thead>
@@ -94,7 +102,6 @@
             </table>
         </div>
         <br>
-        <!-- <button id="GPXViewAddRowButton" onclick="AddDummyRow()">Add Dummy Row</button> -->
     </div>
 
     <!-----------------
@@ -126,7 +133,7 @@
     </div>
 
     <!-----------------
-        ADD ROUTE - STUB
+        ADD ROUTE
     ------------------>
 
     <div class="w3-panel" id="AddRoutePanel">
@@ -142,8 +149,7 @@
         <select id="AddRouteDropdown">
             <option value="" selected> </option> <!--file should not be selected by default-->
         </select>
-        <br>
-        <br>
+        <br><br>
 
         <!--allow user to enter 2 waypoints' information-->
         <form id="addRouteForm">
@@ -229,7 +235,287 @@
         </table>
 
         <br>
+        <hr>
     </div>
+
+    <!-----------------
+        A4 DB SECTION
+    ------------------>
+    <div class="w3-panel" id="A4Panel">
+        <h2><span>A4 Functionality</span></h2>
+        <p>After every command, except Execute Query, display up an alert with the status line based on a 
+            count of each table's rows, e.g.: "Database has N1 files, N2 routes, and N3 points"</p>
+        <a href="#top">Go to top...</a>
+    </div>
+
+    <!-- 'Login' Panel -->
+    <div class="w3-panel" id="DBLoginPanel">
+        <hr>
+        <h2>Database Login</h2>
+        <br>
+    
+        <form id="DBLoginForm">
+            <div class="form-row">
+                <div class="col">
+                    <input type="text" id="entryBoxDBUser" class="form-control" placeholder="Username" required>
+                </div>
+                <div class="col">
+                    <input type="text" id="entryBoxDBPass" class="form-control" placeholder="Password" required>
+                </div>
+                <div class="col">
+                    <input type="text" id="entryBoxDBName" class="form-control" placeholder="Database Name" required>
+                </div>
+            </div>
+            <br>
+            <div class="form-row">
+                <div class="col" id="submitLoginButton">
+                    <input type='submit' class="btn btn-secondary" id="loginButton" value="Login">
+                </div>
+            </div>
+        </form>
+    
+        <br>
+    </div>
+
+    <!-- 'Store all files' Panel -->
+    <div class="w3-panel" id="DBStoreFilesPanel">
+        <hr>
+        <h2>Store All Files</h2>
+        <p>Insert all the data from the files displayed in the File Log Panel into your database.</p>
+        <br>
+        <button type="button" class="btn btn-secondary" id="storeAllFilesButton" disabled>Store Files</button>
+        <br>
+    </div>
+
+    <!-- 'Track Route Updates' Panel -->
+    <div class="w3-panel" id="DBTrackRoutesPanel">
+        <hr>
+        <h2>Track Route Updates</h2>
+        <p>The information in the ROUTE and POINT tables must accurately reflect the file contents.
+            Update the database tables to ensure they have the appropriate and most recent data from the selected file.</p>
+        <br>
+        <!--dropdown to select GPX file-->
+        <label for="DBTrackRouteDropdown">Select GPX file: </label>
+        <select id="DBTrackRouteDropdown" onchange="enableTrackRouteUpdates()">
+            <option value="" selected> </option> <!--file should not be selected by default-->
+        </select>
+        <br><br>
+        <button type="button" class="btn btn-secondary" id="trackRouteUpdatesButton" disabled>Track Updates</button>
+        <br>
+    </div>
+
+    <!-- 'Clear all data' Panel -->
+    <div class="w3-panel" id="DBClearDataPanel">
+        <hr>
+        <h2>Clear All Data</h2>
+        <p>Delete all rows from all the tables. This may have to be done in a specific order due to the foreign keys.
+            This is only active if tables have data in them. Do not drop the tables themselves.
+            You do not need to update the File View Panel, or GPX View panel. 
+            That A3 functionality does not rely on the database, and does not need to be modified.</p>
+        <br>
+        <button type="button" class="btn btn-secondary" id="clearDataButton" disabled>Clear Data</button>
+        <br>
+    </div>
+
+    <!-- 'Display DB Status' Panel -->
+    <div class="w3-panel" id="DBDisplayStatusPanel">
+        <hr>
+        <h2>Display Database Status</h2>
+        <p>This displays an alert with the status line: "Database has N1 files, N2 routes, and N3 points".</p>
+        <br>
+        <button type="button" class="btn btn-secondary" id="displayStatusButton" disabled>Display Status</button>
+        <br>
+    </div>
+
+    <!-- 'Execute Query' Panel -->
+    <div class="w3-panel" id="DBQueryPanel">
+        <hr>
+        <h2>Execute Query</h2>
+        <p>The intended user of this functionality is someone who wants to access a GPX file database 
+            (or just a database of routes). The result of the each query must be displayed as a table.</p>
+        <br>
+        <!--dropdown to select GPX file-->
+        <label for="DBQueryDropdown">Display: </label>
+        <select id="DBQueryDropdown" onchange="showQuery()">
+            <option value="" selected> </option> <!--option should not be selected by default-->
+            <option value="Q1Option">All routes</option>
+            <option value="Q2Option">Routes from specific file</option>
+            <option value="Q3Option">All points from a specific route</option>
+            <option value="Q4Option">All points from a specific file</option>
+            <option value="Q5Option">N shortest/longest routes from a specific file</option>
+        </select>
+        <br>
+        
+        <!--QUERY 1-->
+        <div id="Q1Panel">
+            <br>
+            <h3>Query 1</h3>
+            <p>Display all routes. Your UI must allow the routes to be sorted either by name or by length.</p>
+            <!--radio buttons for sort option-->
+            <form>
+                <div id="Q1SelectSortForm">
+                    <input type="radio" id="Q1NameOption" value="name" name="group1">
+                    <label for="name">Sort by name</label><br>
+                    <input type="radio" id="Q1LengthOption" value="length" name="group1">
+                    <label for="length">Sort by length</label><br>
+                </div>
+            </form>
+            <br>
+            <button type="button" class="btn btn-secondary" id="executeQ1Button" disabled>Execute</button>
+            <br><br>
+            <!--table should be scrollable-->
+            <div class="table-wrapper-scroll-y Q1TableScrollBar" id="Q1TableDiv">
+                <table id="Q1Table" class="queryTable">
+                    <!--table headers-->
+                    <thead>
+                        <tr>
+                            <th>Route ID</th>
+                            <th>Route Name</th>
+                            <th>Route Length</th>
+                        </tr>
+                    </thead>
+                    <!--Every row in tbody contains one component of the selected file, and its basic info-->
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!--QUERY 2-->
+        <div id="Q2Panel">
+            <br>
+            <h3>Query 2</h3>
+            <p>Display the routes from a specific file. This query displays the names and lengths of all routes, as 
+                well as the file name. Allow the user to sort the results by route name and route length.</p>
+            <!--dropdown to select GPX file from database-->
+            <label for="Q2FileDropdown">Choose file in database: </label>
+            <select id="Q2FileDropdown">
+                <option value="" selected> </option> <!--option should not be selected by default-->
+            </select>
+            <br>
+            <!--radio buttons for sort option-->
+            <form>
+                <div id="Q2SelectSortForm">
+                    <input type="radio" id="Q2NameOption" value="name" name="group2">
+                    <label for="name">Sort by name</label><br>
+                    <input type="radio" id="Q2LengthOption" value="length" name="group2">
+                    <label for="length">Sort by length</label><br>
+                </div>
+            </form>
+            <br>
+            <button type="button" class="btn btn-secondary" id="executeQ2Button" disabled>Execute</button>
+            <br><br>
+            <!--table should be scrollable-->
+            <div class="table-wrapper-scroll-y Q2TableScrollBar" id="Q2TableDiv">
+                <table id="Q2Table" class="queryTable">
+                    <!--table headers-->
+                    <thead>
+                        <tr>
+                            <th>Route ID</th>
+                            <th>Route Name</th>
+                            <th>Route Length</th>
+                        </tr>
+                    </thead>
+                    <!--Every row in tbody contains one component of the selected file, and its basic info-->
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!--QUERY 3-->
+        <div id="Q3Panel">
+            <br>
+            <h3>Query 3</h3>
+            <p>Display all points of a specific route, ordered by point index.</p>
+            <!--dropdown to select GPX file from database-->
+            <label for="Q3RouteDropdown">Choose route from file in database: </label>
+            <select id="Q3RouteDropdown">
+                <option value="" selected> </option>
+                <!--option should not be selected by default-->
+            </select>
+            <br><br>
+            <button type="button" class="btn btn-secondary" id="executeQ3Button" disabled>Execute</button>
+            <br><br>
+            <!--table should be scrollable-->
+            <div class="table-wrapper-scroll-y Q3TableScrollBar" id="Q3TableDiv">
+                <table id="Q3Table" class="queryTable">
+                    <!--table headers-->
+                    <thead>
+                        <tr>
+                            <th>Point ID</th>
+                            <th>Point Index</th>
+                            <th>Point Name</th>
+                            <th>Latitude</th>
+                            <th>Longitude</th>
+                        </tr>
+                    </thead>
+                    <!--Every row in tbody contains one component of the selected file, and its basic info-->
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!--QUERY 4-->
+        <div id="Q4Panel">
+            <br>
+            <h3>Query 4</h3>
+            <p>Display all points from a specific file. Allow the user to order them by them by route name or route length. For every
+            route, individual points need to be ordered by point index. If routes have no names, you can order them in as you see
+            fit, and give routes unique labels, e.g. "Unnamed route 1", "unnamed route 2", etc.</p>
+            <!--dropdown to select GPX file from database-->
+            <label for="Q4FileDropdown">Choose file in database: </label>
+            <select id="Q4FileDropdown">
+                <option value="" selected> </option> <!--option should not be selected by default-->
+            </select>
+            <br>
+            <!--radio buttons for sort option-->
+            <form>
+                <div id="Q4SelectSortForm">
+                    <input type="radio" id="Q4NameOption" value="name" name="group4">
+                    <label for="name">Sort by name</label><br>
+                    <input type="radio" id="Q4LengthOption" value="length" name="group4">
+                    <label for="length">Sort by length</label><br>
+                </div>
+            </form>
+            <br>
+            <button type="button" class="btn btn-secondary" id="executeQ4Button" disabled>Execute</button>
+            <br><br>
+            <!--table should be scrollable-->
+            <div class="table-wrapper-scroll-y Q4TableScrollBar" id="Q4TableDiv">
+                <table id="Q4Table" class="queryTable">
+                    <!--table headers-->
+                    <thead>
+                        <tr>
+                            <th>Route Name</th>
+                            <th>Route Length</tH>
+                            <th>Point Index</th>
+                            <th>Latitude</th>
+                            <th>Longitude</th>
+                        </tr>
+                    </thead>
+                    <!--Every row in tbody contains one component of the selected file, and its basic info-->
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!--QUERY 5-->
+        <div id="Q5Panel">
+            <br>
+            <h3>Query 5</h3>
+        </div>
+    </div>
+
+    <!-- 'Logout' Panel -->
+    <div class="w3-panel" id="DBDisplayStatusPanel">
+        <hr>
+        <h2>Logout</h2>
+        <p>Close connection with database.</p>
+        <br>
+        <button type="button" class="btn btn-secondary" id="logoutButton" disabled>Logout</button>
+        <br>
+    </div>
+    
+    <br>
 
     <!-- Leave me at the bottom of body -->
     <script src="/index.js"></script>

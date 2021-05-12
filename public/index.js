@@ -17,10 +17,13 @@ $(document).ready(function() {
         }
     });
 
+    //clear all text boxes on page load
+    $("input[type=text]").val('');
+
     //GPX View table should be empty on page load
     $('#GPXViewTable').append("<tr>" + "<td colspan='8'>No file selected</td>" + "</tr>");
 
-    //create event listener for GPX form submit button
+    //create event listener for 'Create GPX' form submit button
     document.getElementById('createGPXButton').onclick = function(e) {
         e.preventDefault();
         let filename = $('#entryBoxGPXName').val();
@@ -28,7 +31,7 @@ $(document).ready(function() {
         createNewGPX(filename, creator);
     };
 
-    //create event listener for Add Route form submit button
+    //create event listener for 'Add Route' form submit button
     document.getElementById('addRouteButton').onclick = function(e) {
         e.preventDefault();
         let wpt1Lat = $('#entryBoxRtept1Lat').val();
@@ -38,9 +41,82 @@ $(document).ready(function() {
         addRouteToGPX(wpt1Lat, wpt1Lon, wpt2Lat, wpt2Lon);
     }
 
-    //clear all textboxes on page load
-    $("input[type=text]").val('');
+    //create event listener for 'Database Login' form submit button
+    document.getElementById('loginButton').onclick = function(e) {
+        e.preventDefault();
+        let uname = $('#entryBoxDBUser').val();
+        let pass = $('#entryBoxDBPass').val();
+        let name = $('#entryBoxDBName').val();
+        login(uname, pass, name);
+    }
+
+    //create event listener for 'Store All Files' button
+    document.getElementById('storeAllFilesButton').onclick = function() {
+        storeInDB();
+    }
+
+    //create event listener for 'Track Route Updates' button
+    document.getElementById('trackRouteUpdatesButton').onclick = function() {
+        trackRouteUpdates();
+    }
+    
+    //create event listener for 'Clear Database' button
+    document.getElementById('clearDataButton').onclick = function() {
+        clearDB();
+        setTimeout(function () { location.reload() }, 2000); //reload page (with 3s delay) to show logout console message
+    }
+
+    //create event listener for 'Display DB Status' button 
+    document.getElementById('displayStatusButton').onclick = function() {
+        displayDBStatus();
+    }
+
+    //create event listener for 'Logout' button
+    document.getElementById('logoutButton').onclick = function() {
+        logout();
+        setTimeout(function () { location.reload() }, 2000); //reload page (with 3s delay) to show logout console message
+    }
+
+    //disable DB commands upon logout
+    $('#clearDataButton').prop('disabled', true);
+    $('#displayStatusButton').prop('disabled', true);
+    $('#storeAllFilesButton').prop('disabled', true);
+    $('#DBTrackRouteDropdown').prop('disabled', true);
+    $('#trackRouteUpdatesButton').prop('disabled', true);
+    $('#logoutButton').prop('disabled', true);
+    //disable 'Execute Query' buttons
+    $("#DBQueryDropdown").prop("disabled", true);
+    
+    //hide all query panels on page load
+    $('#Q1Panel').hide();
+    $('#Q2Panel').hide();
+    $('#Q3Panel').hide();
+    $('#Q4Panel').hide();
+    $('#Q5Panel').hide();
+
+    //create event listener for 'Execute' button for Query 1
+    document.getElementById('executeQ1Button').onclick = function () {
+        executeQuery1();
+    }
+
+    //create event listener for 'Execute' button for Query 2
+    document.getElementById('executeQ2Button').onclick = function () {
+        executeQuery2();
+    }
+
+    //create event listener for 'Execute' button for Query 3
+    document.getElementById('executeQ3Button').onclick = function () {
+        executeQuery3();
+    }
+
+    //create event listener for 'Execute' button for Query 4
+    document.getElementById('executeQ4Button').onclick = function() {
+        executeQuery4();
+    }
+
+
 });
+
 
 //add files in upload directory to File Log table
 function addUploadFilesToFileLog(GPXFileNamesArr) {
@@ -48,7 +124,7 @@ function addUploadFilesToFileLog(GPXFileNamesArr) {
     if (GPXFileNamesArr.length < 1) {
         $('#FileLogTable').append("<tr>" + "<td colspan='6'>No files</td>" + "</tr>"); //add row to File Log table
     } else {
-        for (filename of GPXFileNamesArr) {
+        for (let filename of GPXFileNamesArr) {
             convertFileToJSON(filename);
         }
     }
@@ -69,8 +145,10 @@ function convertFileToJSON(filename) {
             if (data.doc != null) {
                 console.log("GPX file loaded in successfully: " + data.filename);
                 addFileToFileLog(data); //add file to File Log Panel table
-                $('#GPXViewDropdown').append(new Option(data.filename, data.filename)); //add file to GPX View dropdown
-                $('#AddRouteDropdown').append(new Option(data.filename, data.filename)); //add file to Add Route dropdown
+                //add file to dropdowns
+                $('#GPXViewDropdown').append(new Option(data.filename, data.filename));
+                $('#AddRouteDropdown').append(new Option(data.filename, data.filename));
+                $('#DBTrackRouteDropdown').append(new Option(data.filename, data.filename));
             } else {
                 console.log("Error in loading file: " + filename);
             }
@@ -160,9 +238,10 @@ function addAllComponentsToGPXViewTable(GPXobj) {
                     "</form>" +
                 "</td>" +
                 "<td>" +
-                    "<form ref='renameForm' id='renameForm'>" +
+                    "<form ref='renameForm' id='renameForm' onsubmit='return false'>" +
                         "<div class='form-group'>" +
-                        "<input type='submit' class='btn btn-secondary' value='Submit'>" +
+                            "<input type='submit' class='btn btn-secondary' value='Submit' " +
+                                "onclick='updateComponent(" + 1 + ", " + counter + ")'>" +
                         "</div>" +
                     "</form>" +
                 "</td>" +
@@ -248,7 +327,6 @@ function updateComponent(flag, counter) {
     else name = $('#entryBox' + 'T' + counter).val();
     let chosenFile = $('#GPXViewDropdown option:selected').val();
     let index = counter - 1;
-    //console.log("UPDATE Component", flag, " ", index, " ", name, " ");
 
     $.ajax({
         type: 'get',                   //Request type
@@ -344,4 +422,429 @@ function addRouteToGPX(wpt1Lat, wpt1Lon, wpt2Lat, wpt2Lon) {
         $("#GPXViewTable tbody tr").remove(); //clear <tbody/> before adding new rows for new file
         $('#GPXViewTable').append("<tr>" + "<td colspan='8'>No file selected</td>" + "</tr>");
     }
+}
+
+
+/*
+A4 DB Functionality
+MYSQL Database Connection
+*/
+
+
+//display database status 
+function displayDBStatus() {
+    $.ajax({
+        type: 'get',
+        dataType: 'json',
+        url: '/displayDBStatus',
+        data: {},
+        success: function (data) {
+            if (data.status == 0) alert("Database has " + data.numFiles + " files, " + data.numRoutes + " routes, and " + data.numPoints + " points.");
+            else alert("Could not display database status.");
+        },
+        fail: function (error) {
+            console.log(error);
+        }
+    });
+}
+
+
+//allow user to login to database
+function login(uname, pass, name) {
+    $.ajax({
+        type: 'get',
+        dataType: 'json',
+        url: '/login',
+        data: {
+            uname: uname,
+            pass: pass,
+            name: name
+        },
+        success: function (data) {
+            //ensures invalid files do not get displayed
+            if (data.loginStatus == true) {
+                console.log("Successfully created connection to database:", name);
+                displayDBStatus();
+                //make clickable upon login, as DB tables are also created by then
+                $('#clearDataButton').prop('disabled', false);
+                $('#displayStatusButton').prop('disabled', false);
+                $('#logoutButton').prop('disabled', false);
+                //enable UI elements for updating DB, if there are files on the server
+                let numFiles = $('#GPXViewDropdown').children('option').length;
+                if (numFiles > 0) { //this functionality needs files to be on the server
+                    $('#storeAllFilesButton').prop('disabled', false);
+                    $("#DBTrackRouteDropdown").prop("disabled", false);
+                }
+                //allow execute query commands if DB is already filled
+                if (data.filledRows > 0) $("#DBQueryDropdown").prop("disabled", false);
+            } else {
+                alert("Invalid credentials. Please try again.");
+            }
+        },
+        fail: function (error) {
+            console.log(error);
+        }
+    });
+}
+
+
+//store all files in DB
+/*
+get all files on the server (in the uploads/ directory)
+for each filename in the array of filenames, create a GPXdoc struct 
+insert the filename and its corresponding GPXdoc struct's related info (filename, version, creator) into table
+*/
+function storeInDB() {
+    $.ajax({
+        type: 'get',
+        dataType: 'json',
+        url: '/storeInDB',
+        data: {},
+        success: function (data) {
+            if (data.isStored) {
+                console.log("Successfully stored all files in database!");
+                displayDBStatus();
+                $("#DBQueryDropdown").prop("disabled", false);
+                //add files and routes in server to respective dropdowns
+                for (let file of data.filesStored) {
+                    $('#Q2FileDropdown').append(new Option(file.file_name, file.file_name));
+                    $('#Q4FileDropdown').append(new Option(file.file_name, file.file_name));
+                }
+                let i = 1;
+                for (let route of data.routesStored) {
+                    let routeName = route.route_name;
+                    if (!routeName) routeName = "[no named route " + i + "]";
+                    $('#Q3RouteDropdown').append(new Option(routeName, route.route_id));
+                    i++;
+                }
+            }
+            else console.log("Error in storing files - the server may not have any files.");
+        },
+        fail: function (error) {
+            console.log(error);
+        }
+    });
+}
+
+
+//clear database
+function clearDB() {
+    $.ajax({
+        type: 'post',
+        dataType: 'json',
+        url: '/clearDB',
+        data: {},
+        success: function (data) {
+            if (data.isCleared == true) {
+                console.log("Successfully cleared database!");
+                displayDBStatus();
+                $('#trackRouteUpdatesButton').prop('disabled', true);
+            }
+        },
+        fail: function (error) {
+            console.log(error);
+        }
+    });
+}
+
+
+//enable track route updates button
+function enableTrackRouteUpdates() {
+    if ($('#DBTrackRouteDropdown option:selected').val() == "") {
+        $('#trackRouteUpdatesButton').prop('disabled', true);
+    }
+    else {
+        //enable 'Track Route Updates' button if DB is storing files
+        $.ajax({
+            type: 'get',
+            dataType: 'json',
+            url: '/displayDBStatus',
+            data: {},
+            success: function (data) {
+                if (data.numFiles > 0) $('#trackRouteUpdatesButton').prop('disabled', false);
+            },
+            fail: function (error) {
+                console.log(error);
+            }
+        });
+    }
+}
+
+
+//track route updates
+function trackRouteUpdates() {
+    $.ajax({
+        type: 'get',
+        dataType: 'json',
+        url: '/updateDB',
+        data: {},
+        success: function (data) {
+            if (data.isStored) {
+                console.log("Successfully updated database!");
+                displayDBStatus();
+                $("#DBQueryDropdown").prop("disabled", false);
+                //add files and routes in server to respective dropdowns
+                let i = 0;
+                for (let file of data.filesStored) $('#Q2FileDropdown').append(new Option(file.file_name, file.file_name));
+                for (let route of data.routesStored) {
+                    let routeName = route.route_name;
+                    if (!routeName) routeName = "[no named route # " + i + "]";
+                    $('#Q3RouteDropdown').append(new Option(routeName, route.route_id));
+                    i++;
+                }
+            }
+            else console.log("Error in storing files - there may be no files on the server.");
+        },
+        fail: function (error) {
+            console.log(error);
+        }
+    });
+}
+
+
+//show query panel of query selected from Query Panel dropdown 
+function showQuery() {
+    let chosenQuery = $('#DBQueryDropdown option:selected').val();
+    
+    $('#Q1Panel').hide();
+    $('#Q2Panel').hide();
+    $('#Q3Panel').hide();
+    $('#Q4Panel').hide();
+    $('#Q5Panel').hide();
+    $("#Q1Table tbody tr").remove();
+    $("#Q2Table tbody tr").remove();
+    $("#Q3Table tbody tr").remove();
+    $("#Q4Table tbody tr").remove();
+    $("#Q5Table tbody tr").remove();
+    
+    if (chosenQuery == "Q1Option") {
+        $('#Q1Panel').show();
+        enableQuery('#executeQ1Button', '#Q1Table');
+    }
+    else if (chosenQuery == "Q2Option") {
+        $('#Q2Panel').show();
+        enableQuery('#executeQ2Button', '#Q2Table');
+    }
+    else if (chosenQuery == "Q3Option") {
+        $('#Q3Panel').show();
+        enableQuery('#executeQ3Button', '#Q3Table');
+    }
+    else if (chosenQuery == "Q4Option") {
+        $('#Q4Panel').show();
+        enableQuery('#executeQ4Button', '#Q4Table');
+    }
+    else if (chosenQuery == "Q5Option") {
+        $('#Q5Panel').show();
+        enableQuery('#executeQ5Button', '#Q5Table');
+    } 
+}
+
+
+//enable selected query - show panel, enable 'Execute' button if server has files
+function enableQuery(queryButton, queryTable) {
+    $(queryButton).prop('disabled', true);
+
+    let numDBFiles = $('#Q2FileDropdown').children('option').length;
+    if (numDBFiles > 0) $(queryButton).prop('disabled', false);
+    $(queryTable).append("<tr>" + "<td colspan='6'>Nothing to display</td>" + "</tr>"); //until 'Execute' button is clicked
+}
+
+
+//execute Query 1
+function executeQuery1() {
+    let sortChoice = 0; //1->name, 2->length, 0->neither
+
+    if ($('#Q1NameOption').is(':checked')) sortChoice = 1;
+    else if ($('#Q1LengthOption').is(':checked')) sortChoice = 2;
+
+    $.ajax({
+        type: 'get',
+        dataType: 'json',
+        url: '/query1',
+        data: {
+            sort: sortChoice
+        },
+        success: function (data) {           
+            //clear (all table rows) within <tbody/> before adding new rows for new Query
+            $("#Q1Table tbody tr").remove();
+
+            //display sorted results in table
+            let routeName;
+            for (let row of data.sortedRoutes) {
+                routeName = row.route_name;
+                if (!routeName) routeName = "[no name for route " + row.route_id + "]";
+                $('#Q1Table').append("<tr>" + 
+                    "<td>" + row.route_id + "</td>" +
+                    "<td>" + routeName + "</td>" +
+                    "<td>" + row.route_len + "</td>" +
+                    "</tr>");
+            }
+            console.log("Successfully executed Query 1!");
+        },
+        fail: function (error) {
+            console.log(error);
+        }
+    })
+}
+
+
+//execute Query 2
+function executeQuery2() {
+    let sortChoice = 0; //1->name, 2->length, 0->neither
+    let filename = $('#Q2FileDropdown option:selected').val();
+
+    if ($('#Q2NameOption').is(':checked')) sortChoice = 1;
+    else if ($('#Q2LengthOption').is(':checked')) sortChoice = 2;
+
+    if (filename != "") {
+        $.ajax({
+            type: 'get',
+            dataType: 'json',
+            url: '/query2',
+            data: {
+                sort: sortChoice,
+                file: filename
+            },
+            success: function (data) {
+                //clear (all table rows) within <tbody/> before adding new rows for new Query
+                $("#Q2Table tbody tr").remove();
+
+                //display sorted routes in table
+                let routeName;
+                for (let row of data.sortedRoutes) {
+                    routeName = row.route_name;
+                    if (!routeName) routeName = "[no name for route " + row.route_id + "]";
+                    $('#Q2Table').append("<tr>" +
+                        "<td>" + row.route_id + "</td>" +
+                        "<td>" + routeName + "</td>" +
+                        "<td>" + row.route_len + "</td>" +
+                        "</tr>");
+                }
+                if (data.sortedRoutes.length == 0) $('#Q2Table').append("<tr>" + "<td colspan='6'>No routes</td>" + "</tr>");
+                console.log("Successfully executed Query 2!");
+            },
+            fail: function (error) {
+                console.log(error);
+            }
+        })
+    }
+}
+
+
+//execute Query 3
+function executeQuery3() {
+    let routeID = $('#Q3RouteDropdown option:selected').val();
+
+    //clear (all table rows) within <tbody/> before adding new rows for new Query
+    $("#Q3Table tbody tr").remove();
+
+    if (routeID == "") {
+        $('#Q3Table').append("<tr>" + "<td colspan='6'>Nothing to display</td>" + "</tr>");
+    } else {
+        $.ajax({
+            type: 'get',
+            dataType: 'json',
+            url: '/query3',
+            data: {
+                route: routeID
+            },
+            success: function (data) {    
+                //display sorted points in table
+                let pointName;
+                for (let row of data.sortedPoints) {
+                    pointName = row.point_name;
+                    if (!pointName) pointName = "[no name for point " + row.point_id + "]";
+                    $('#Q3Table').append("<tr>" +
+                        "<td>" + row.point_id + "</td>" +
+                        "<td>" + row.point_index + "</td>" +
+                        "<td>" + pointName + "</td>" +
+                        "<td>" + row.latitude + "</td>" +
+                        "<td>" + row.longitude + "</td>" +
+                        "</tr>");
+                }
+                if (data.sortedPoints.length == 0) $('#Q3Table').append("<tr>" + "<td colspan='6'>No points</td>" + "</tr>");
+                console.log("Successfully executed Query 3!");
+            },
+            fail: function (error) {
+                console.log(error);
+            }
+        })
+    }
+}
+
+
+//execute Query 4
+function executeQuery4() {
+    let filename = $('#Q4FileDropdown option:selected').val();
+    let sortChoice = 0; //1->name, 2->length, 0->neither
+
+    //clear (all table rows) within <tbody/> before adding new rows for new Query
+    $("#Q4Table tbody tr").remove();
+
+    if ($('#Q4NameOption').is(':checked')) sortChoice = 1;
+    else if ($('#Q4LengthOption').is(':checked')) sortChoice = 2;
+
+    if (filename != "") {
+        $.ajax({
+            type: 'get',
+            dataType: 'json',
+            url: '/query4',
+            data: {
+                sort: sortChoice,
+                file: filename
+            },
+            success: function (data) {
+                //sort routes
+                let routeName;
+                for (let route of data.sortedRoutes) {
+                    let i = 0;
+                    let flag = 0; //0->first point in route
+                    let pointHTML = [];
+                    for (let point of data.sortedPoints) {
+                        if (i == 0 && flag == 0) {
+                            pointHTML.push("<td>" + point.point_index + "</td>" +
+                                "<td>" + point.latitude + "</td>" +
+                                "<td>" + point.longitude + "</td>");
+                            flag = 1;
+                        }
+                        pointHTML.push(pointHTML);
+                    }
+                    routeName = route.route_name;
+                    if (!routeName) routeName = "[no name for route " + route.route_id + "]";
+                    $('#Q4Table').append("<tr>" +
+                        "<td>" + routeName + "</td>" +
+                        "<td>" + route.route_len + "</td>" +
+                        pointHTML +
+                        "</tr>");
+                }
+                if (data.sortedRoutes.length == 0) $('#Q4Table').append("<tr>" + "<td colspan='8'>No points</td>" + "</tr>");
+                console.log("Successfully executed Query 4!");
+            },
+            fail: function (error) {
+                console.log(error);
+            }
+        })
+    }
+}
+
+
+//execute Query 5
+function executeQuery5() {
+}
+
+
+//log user out of database
+function logout() {
+    $.ajax({
+        type: 'get',
+        dataType: 'json',
+        url: '/logout',
+        data: {},
+        success: function (data) {
+            if (data.isLoggedOut == true) console.log("Successfully logged out of database!");
+        },
+        fail: function (error) {
+            console.log(error);
+        }
+    });
 }

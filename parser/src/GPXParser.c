@@ -114,12 +114,9 @@ bool updateComponentName(char *fileDir, int compFlag, int index, char *newName) 
     //validate GPX doc struct and write to file
     isValidGPXdoc = validateGPXDoc(doc, "./parser/gpx.xsd");
     if (isValidGPXdoc) {
-        //if (remove(fileDir) == 0) { //delete the file
+        if (remove(fileDir) == 0) { //delete the file
             isUpdated = writeGPXdoc(doc, fileDir);
-            //printf("isvalid\n");
-        //}
-    } else {
-        //printf("isInvalid\n");
+        }
     }
 
     deleteGPXdoc(doc);
@@ -263,9 +260,86 @@ char* detailedRouteToJSON(const Route *rte) {
     strcat(stringJSON, "\"loop\":");
     strcat(stringJSON, isLoop);
     strcat(stringJSON, ",");
-    //"otherDataList":[{otherData}, {otherData}, ...]}
+    //"otherDataList":[{otherData}, {otherData}, ...],
     strcat(stringJSON, "\"otherData\":");
     strcat(stringJSON, otherDataListToJSON(rte->otherData, NULL));
+    strcat(stringJSON, ",");
+    //"waypoints":[{waypoint}, {waypoint}, ...]}
+    strcat(stringJSON, "\"waypoints\":");
+    strcat(stringJSON, waypointsListToJSON(rte->waypoints));
+    strcat(stringJSON, "}");
+
+    stringJSON = realloc(stringJSON, sizeof(char) * (strlen(stringJSON) + 1));
+
+    return stringJSON;
+}
+
+
+char* waypointsListToJSON(const List *list) {
+    char *stringJSON = calloc(10000, sizeof(char));
+
+    if (list == NULL) {
+        strcpy(stringJSON, "[]");
+        stringJSON = realloc(stringJSON, sizeof(char) * (strlen(stringJSON) + 1));
+        return stringJSON; //ptr to statically allocated string e.g. "[]" when returned will be NULL
+    }
+
+    char *wptBuffer;
+    Waypoint *wpt;
+    int i = 0;
+
+    sprintf(stringJSON, "[");
+    ListIterator iter = createIterator((List*)list);
+    while ((wpt = nextElement(&iter)) != NULL) {
+        if (i >= 1) strcat(stringJSON, ","); //comma shouldn't follow last JSON string
+        wptBuffer = waypointToJSON(wpt, i);
+        strcat(stringJSON, wptBuffer);
+        free(wptBuffer);
+        i++;
+    }
+    strcat(stringJSON, "]");
+
+    stringJSON = realloc(stringJSON, sizeof(char) * (strlen(stringJSON) + 1));
+
+    return stringJSON;
+}
+
+
+char* waypointToJSON(const Waypoint *wpt, int index) {
+    char *stringJSON = calloc(10000, sizeof(char));
+
+    if (wpt == NULL) {
+        strcpy(stringJSON, "{}");
+        stringJSON = realloc(stringJSON, sizeof(char) * (strlen(stringJSON) + 1));
+        return stringJSON; //ptr to statically allocated string e.g. "{}" when returned will be NULL
+    }
+
+    char name[200] = {'\0'};
+    char lat[50] = {'\0'}, lon[50] ={'\0'};
+    char idx[10] = {'\0'};
+
+    //finding name
+    if (wpt->name == NULL || strcmp(wpt->name, "") == 0) strcpy(name, "None");
+    else strcpy(name, wpt->name);
+    //finding latitude and longitude
+    sprintf(lat, "%lf", wpt->latitude);
+    sprintf(lon, "%lf", wpt->longitude);
+    //finding index
+    sprintf(idx, "%d", index);
+
+    //{"name":"wpt_name",
+    sprintf(stringJSON, "{\"name\":\"%s\",", name);
+    //"latitude":wpt_lat,
+    strcat(stringJSON, "\"latitude\":");
+    strcat(stringJSON, lat);
+    strcat(stringJSON, ",");
+    //"longitude":wpt_lon,
+    strcat(stringJSON, "\"longitude\":");
+    strcat(stringJSON, lon);
+    strcat(stringJSON, ",");
+    //"index":wpt_idx,
+    strcat(stringJSON, "\"index\":");
+    strcat(stringJSON, idx);
     strcat(stringJSON, "}");
 
     stringJSON = realloc(stringJSON, sizeof(char) * (strlen(stringJSON) + 1));

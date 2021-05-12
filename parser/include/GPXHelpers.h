@@ -12,6 +12,12 @@
 #include <libxml/xmlschemastypes.h>
 #include "LinkedListAPI.h"
 
+/**********A4 helper functions**********/
+
+char* waypointToJSON(const Waypoint *wpt, int index);
+
+char* waypointsListToJSON(const List *list);
+
 /**********A3 helper functions**********/
 
 /**
@@ -139,7 +145,7 @@ char *getAllTrackComponentsJSON(char *fileName);
  * @param fileName name of file to create GPXdoc from
  * @return JSON array of objects, each object representing one route and its components
  */
-char *getAllRoutesComponentsJSON(char *fileName);
+char *getAllRouteComponentsJSON(char *fileName);
 
 /**
  * HELPER convert file to GPX object and return a JSON string representation of it
