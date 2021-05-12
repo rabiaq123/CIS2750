@@ -1,0 +1,87 @@
+html {
+    width: 70%;
+    height: 100%;
+    min-height: 100%;
+    margin: 0 auto;
+    font-size: 16px;
+    background-color: #FFFFFF;
+}
+body {
+    height: 100%;
+    min-height: 100%;
+    line-height: 1.75;
+    background-color: #FFFFFF;
+}
+a:link:hover {
+    -webkit-transition: all 0.3s ease;
+    -moz-transition: all 0.3s ease;
+    transition: all 0.3s ease;
+    text-decoration: underline;
+    cursor: pointer;
+    cursor: hand;
+}
+input[type=submit], button {
+    cursor: pointer;
+    cursor: hand;
+}
+@media(max-width: 900px) {
+    html {
+        font-size: 14px !important;
+        width: 80% !important;
+    }
+}
+@media(max-width: 480px) {
+    html {
+        font-size: 12px !important;
+        width: 90% !important;
+    }
+}
+@media(max-width: 320px) {
+    html {
+        font-size: 12px !important;
+        width: 100% !important;
+    }
+}
+table, th, td {
+    border: 1px solid rgb(180, 174, 174);
+    padding: 6px;
+    text-align: center;
+}
+table {
+    background-color: rgb(232, 239, 241);
+    width: 100%;
+}
+th {
+    background-color: #bed5db;
+    top:0;
+    position: sticky;
+    font-weight: lighter;
+}
+td {
+    vertical-align: middle;
+}
+.FileLogTableScrollBar {
+    position: relative;
+    max-height: 200px;
+    overflow: auto;
+}
+.GPXViewTableScrollBar {
+    position: relative;
+    max-height: 200px;
+    overflow: auto;
+}
+a {
+    color:rgb(101, 165, 187);
+}
+#FindPathBtwnTable {
+    width:50%;
+}
+#entryBoxDeltaVal {
+    width:50%;
+}
+#addRouteForm {
+    width: 50%;
+}
+/* input:required {
+    border-color: rgb(218, 208, 208);
+} */

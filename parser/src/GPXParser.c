@@ -8,6 +8,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <math.h>
+#include <sys/stat.h>
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 #include <libxml/xmlschemastypes.h>
@@ -27,7 +28,427 @@
  */
 
 
-GPXdoc* createValidGPXdoc(char* fileName, char* gpxSchemaFile) {
+/***A3 functions***/
+
+
+bool addRouteToGPXWrapper(char *filename, double wpt1Lat, double wpt1Lon, double wpt2Lat, double wpt2Lon) {
+    GPXdoc *doc = createValidGPXdoc(filename, "./parser/gpx.xsd");
+
+    addNewRteToGPX(doc, wpt1Lat, wpt1Lon, wpt2Lat, wpt2Lon); //add to GPXdoc struct for pre-existing file
+
+    if (!validateGPXDoc(doc, "./parser/gpx.xsd")) return false;
+    if (!writeGPXdoc(doc, filename)) return false; //save to disk
+
+    return true;
+}
+
+
+bool createNewGPX(char *filename, char *creator, int creatorLen) {
+    if(strstr(filename, ".gpx") == NULL) return false; //filename must have .gpx extension
+
+    //if file exists already, do not create GPX file with same name (do not overwrite)
+    struct stat buffer;
+    if (stat(filename, &buffer) == 0) return false;
+    
+    GPXdoc *doc = malloc(sizeof(GPXdoc));
+    doc->creator = calloc((creatorLen) + 1, sizeof(char)); //didn't use strlen() as JavaScript doesn't use \0
+
+    doc->version = 1.1;
+    strcpy(doc->namespace, "http://www.topografix.com/GPX/1/1");
+    strcpy(doc->creator, creator);
+
+    initializeReqLists(doc);
+    for (int i = 0; i < 2; i++) addNewRteToGPX(doc, 43.537299, 43.537299, 43.537299, 43.537299); //add to newly created GPXdoc struct
+
+    if (!validateGPXDoc(doc, "./parser/gpx.xsd")) return false;
+    if (!writeGPXdoc(doc, filename)) return false; //save to disk
+
+    deleteGPXdoc(doc);
+
+    return true;
+}
+
+
+void addNewRteToGPX(GPXdoc *doc, double wpt1Lat, double wpt1Lon, double wpt2Lat, double wpt2Lon) {
+    Route *rte = malloc(sizeof(Route));
+    Waypoint *wpt1 = malloc(sizeof(Waypoint));
+    Waypoint *wpt2 = malloc(sizeof(Waypoint));
+
+    //initialize parts of Route struct that are required to be initialized
+    rte->name = calloc(300, sizeof(char));
+    rte->waypoints = initializeList(&waypointToString, &deleteWaypoint, &compareWaypoints);
+    rte->otherData = initializeList(&gpxDataToString, &deleteGpxData, &compareGpxData);
+
+    //initialize parts of the Waypoint struct that are required to be initialized
+    //waypoint 1
+    wpt1->name = calloc(300, sizeof(char));
+    wpt1->otherData = initializeList(&gpxDataToString, &deleteGpxData, &compareGpxData);
+    wpt1->latitude = wpt1Lat;
+    wpt1->longitude = wpt1Lon;
+    //waypoint 2
+    wpt2->name = calloc(300, sizeof(char));
+    wpt2->otherData = initializeList(&gpxDataToString, &deleteGpxData, &compareGpxData);
+    wpt2->latitude = wpt2Lat;
+    wpt2->longitude = wpt2Lon;
+
+    //adding two waypoints to route's list of waypoints
+    addWaypoint(rte, wpt1);
+    addWaypoint(rte, wpt2);
+
+    //insert route at the back of newly created Routes list of GPXdoc struct
+    addRoute(doc, rte);
+}
+
+
+bool updateComponentName(char *fileDir, int compFlag, int index, char *newName) {
+    bool isValidGPXdoc = false, isUpdated = false;
+    GPXdoc *doc;
+
+    doc = createValidGPXdoc(fileDir, "./parser/gpx.xsd");
+    //printf("in updateCompName: %s %d %d %s\n", fileDir, compFlag, index, newName);
+
+    //update the name of the component in the GPX doc struct
+    if (compFlag == 1) doc = updateRouteName(doc, newName, index);
+    else doc = updateTrackName(doc, newName, index);
+
+    //validate GPX doc struct and write to file
+    isValidGPXdoc = validateGPXDoc(doc, "./parser/gpx.xsd");
+    if (isValidGPXdoc) {
+        //if (remove(fileDir) == 0) { //delete the file
+            isUpdated = writeGPXdoc(doc, fileDir);
+            //printf("isvalid\n");
+        //}
+    } else {
+        //printf("isInvalid\n");
+    }
+
+    deleteGPXdoc(doc);
+
+    return isUpdated;
+}
+
+
+GPXdoc *updateRouteName(GPXdoc *doc, char *newName, int index) {
+    GPXdoc *updatedDoc = doc;
+    Route *rte;
+    int i = 0;
+
+    //store new name into name of route at given index
+    ListIterator iter = createIterator(updatedDoc->routes);
+    while ((rte = nextElement(&iter)) != NULL) {
+        if (i == index) strcpy(rte->name, newName);
+        i++;
+    }
+
+    return updatedDoc;
+}
+
+
+GPXdoc *updateTrackName(GPXdoc *doc, char *newName, int index) {
+    GPXdoc *updatedDoc = doc;
+    Track *trk;
+    int i = 0;
+
+    //store new name into name of track at given index
+    ListIterator iter = createIterator(updatedDoc->tracks);
+    while ((trk = nextElement(&iter)) != NULL) {
+        if (i == index) strcpy(trk->name, newName);
+        //printf("track name: %s\n", trk->name);
+        i++;
+    }
+
+    return updatedDoc;
+}
+
+
+char* GPXFileToJSON(char* filename) {
+    GPXdoc *doc = createValidGPXdoc(filename, "./parser/gpx.xsd");
+    if (doc == NULL) return NULL;
+
+    char *stringJSON = GPXtoJSON(doc);
+    deleteGPXdoc(doc);
+
+    return stringJSON; 
+}
+
+
+char *getAllRouteComponentsJSON(char *filename) {
+    GPXdoc *doc = createValidGPXdoc(filename, "./parser/gpx.xsd");
+    if (doc == NULL) return NULL;
+
+    char *routesStringJSON = detailedRouteListToJSON(doc->routes);
+    deleteGPXdoc(doc);
+
+    return routesStringJSON;
+}
+
+
+char *getAllTrackComponentsJSON(char *filename) {
+    GPXdoc *doc = createValidGPXdoc(filename, "./parser/gpx.xsd");
+    if (doc == NULL) return NULL;
+
+    char *tracksStringJSON = detailedTrackListToJSON(doc->tracks);
+    deleteGPXdoc(doc);
+
+    return tracksStringJSON;
+}
+
+
+char *detailedRouteListToJSON(const List *list){
+    char *stringJSON = calloc(10000, sizeof(char));
+
+    if (list == NULL) {
+        strcpy(stringJSON, "[]");
+        stringJSON = realloc(stringJSON, sizeof(char) * (strlen(stringJSON) + 1));
+        return stringJSON; //ptr to statically allocated string e.g. "[]" when returned will be NULL
+    }
+
+    char *rteBuffer;
+    Route *rte;
+    int i = 0;
+
+    sprintf(stringJSON, "[");
+
+    ListIterator iter = createIterator((List*)list);
+    while ((rte = nextElement(&iter)) != NULL) {
+        if (++i >= 2) strcat(stringJSON, ","); //comma shouldn't follow last JSON string
+        rteBuffer = detailedRouteToJSON(rte);
+        strcat(stringJSON, rteBuffer);
+        free(rteBuffer);
+    }
+
+    strcat(stringJSON, "]");
+
+    stringJSON = realloc(stringJSON, sizeof(char) * (strlen(stringJSON) + 1));
+
+    return stringJSON;
+}
+
+
+char* detailedRouteToJSON(const Route *rte) {
+    char *stringJSON = calloc(10000, sizeof(char));
+
+    if (rte == NULL) {
+        strcpy(stringJSON, "{}");
+        stringJSON = realloc(stringJSON, sizeof(char) * (strlen(stringJSON) + 1));
+        return stringJSON; //ptr to statically allocated string e.g. "{}" when returned will be NULL
+    }
+
+    char name[200] = {'\0'};
+    char numPoints[10] = {'\0'};
+    char len[10] = {'\0'};
+    char isLoop[6] = "true"; //"true" or "false"
+
+    //finding name
+    if (rte->name == NULL || strcmp(rte->name, "") == 0) strcpy(name, "None");
+    else strcpy(name, rte->name);
+    //finding num points
+    sprintf(numPoints, "%d", getLength(rte->waypoints));
+    //finding route len, rounded to the nearest 10
+    sprintf(len, "%.1f", round10(getRouteLen(rte)));
+    //finding loop stat
+    if (!isLoopRoute(rte, 10.0)) strcpy(isLoop, "false");
+
+    //{"name":"route_name",
+    sprintf(stringJSON, "{\"name\":\"%s\",", name);
+    //"numPoints":num_points,
+    strcat(stringJSON, "\"numPoints\":");
+    strcat(stringJSON, numPoints);
+    strcat(stringJSON, ",");
+    //"len":route_len,
+    strcat(stringJSON, "\"len\":");
+    strcat(stringJSON, len);
+    strcat(stringJSON, ",");
+    //"loop":loopStat,
+    strcat(stringJSON, "\"loop\":");
+    strcat(stringJSON, isLoop);
+    strcat(stringJSON, ",");
+    //"otherDataList":[{otherData}, {otherData}, ...]}
+    strcat(stringJSON, "\"otherData\":");
+    strcat(stringJSON, otherDataListToJSON(rte->otherData, NULL));
+    strcat(stringJSON, "}");
+
+    stringJSON = realloc(stringJSON, sizeof(char) * (strlen(stringJSON) + 1));
+
+    return stringJSON;
+}
+
+
+char* detailedTrackListToJSON(const List *list) {
+    char *stringJSON = calloc(10000, sizeof(char));
+
+    if (list == NULL) {
+        strcpy(stringJSON, "[]");
+        stringJSON = realloc(stringJSON, sizeof(char) * (strlen(stringJSON) + 1));
+        return stringJSON; //ptr to statically allocated string e.g. "[]" when returned will be NULL
+    }
+
+    char *trkBuffer;
+    Track *trk;
+    int i = 0;
+
+    sprintf(stringJSON, "[");
+    ListIterator iter = createIterator((List*)list);
+    while ((trk = nextElement(&iter)) != NULL) {
+        if (++i >= 2) strcat(stringJSON, ","); //comma shouldn't follow last JSON string
+        trkBuffer = detailedTrackToJSON(trk);
+        strcat(stringJSON, trkBuffer);
+        free(trkBuffer);
+    }
+    strcat(stringJSON, "]");
+
+    stringJSON = realloc(stringJSON, sizeof(char) * (strlen(stringJSON) + 1));
+
+    return stringJSON;
+}
+
+
+char* detailedTrackToJSON(const Track *trk) {
+    char *stringJSON = calloc(10000, sizeof(char));
+
+    if (trk == NULL) {
+        strcpy(stringJSON, "{}");
+        stringJSON = realloc(stringJSON, sizeof(char) * (strlen(stringJSON) + 1));
+        return stringJSON; //ptr to statically allocated string e.g. "{}" when returned will be NULL
+    }
+
+    char name[200] = {'\0'};
+    char numPoints[10] = {'\0'};
+    char len[10] = {'\0'};
+    char isLoop[6] = "true"; //"true" or "false"
+
+    //finding name
+    if (trk->name == NULL || strcmp(trk->name, "") == 0) strcpy(name, "None");
+    else strcpy(name, trk->name);
+    //finding num points
+    sprintf(numPoints, "%d", getNumTrkptsInTrack(trk));
+    //finding track len, rounded to the nearest 10
+    sprintf(len, "%.1f", round10(getTrackLen(trk)));
+    //finding loop stat
+    if (!isLoopTrack(trk, 10.0)) strcpy(isLoop, "false");
+
+    //{"name":"track_name",
+    sprintf(stringJSON, "{\"name\":\"%s\",", name);
+    //"numPoints":num_points,
+    strcat(stringJSON, "\"numPoints\":");
+    strcat(stringJSON, numPoints);
+    strcat(stringJSON, ",");
+    //"len":track_len,
+    strcat(stringJSON, "\"len\":");
+    strcat(stringJSON, len);
+    strcat(stringJSON, ",");
+    //"loop":loopStat,
+    strcat(stringJSON, "\"loop\":");
+    strcat(stringJSON, isLoop);
+    strcat(stringJSON, ",");
+    //"otherDataList":[{otherData}, {otherData}, ...]}
+    strcat(stringJSON, "\"otherData\":");
+    strcat(stringJSON, otherDataListToJSON(NULL, trk->otherData));
+    strcat(stringJSON, "}");
+
+    stringJSON = realloc(stringJSON, sizeof(char) * (strlen(stringJSON) + 1));
+
+    return stringJSON;
+}
+
+
+int getNumTrkptsInTrack(const Track *trk) {
+    int numTrkpts = 0;
+    TrackSegment *trkSegPtr;
+
+    ListIterator iter = createIterator(trk->segments);
+    while ((trkSegPtr = nextElement(&iter)) != NULL) {
+        numTrkpts += getLength(trkSegPtr->waypoints);
+    }
+
+    return numTrkpts;
+}
+
+
+char *otherDataListToJSON(List *rteOtherDataList, List *trkOtherDataList) {
+    char *stringJSON = calloc(10000, sizeof(char));
+
+    List *list;
+    if (rteOtherDataList != NULL) list = rteOtherDataList;
+    else if (trkOtherDataList != NULL) list = trkOtherDataList;
+
+    if (getLength(list) == 0) { //no other data in route/track
+        strcpy(stringJSON, "[]");
+        stringJSON = realloc(stringJSON, sizeof(char) * (strlen(stringJSON) + 1));
+        return stringJSON; //ptr to statically allocated string e.g. "[]" when returned will be NULL
+    }
+
+    char *otherDataBuffer;
+    GPXData *otherData;
+    int i = 0;
+
+    sprintf(stringJSON, "[");
+    ListIterator iter = createIterator((List*)list);
+    while ((otherData = nextElement(&iter)) != NULL) {
+        if (++i >= 2) strcat(stringJSON, ","); //comma shouldn't follow last JSON string
+        otherDataBuffer = otherDataElemToJSON(otherData);
+        strcat(stringJSON, otherDataBuffer);
+        free(otherDataBuffer);
+    }
+    strcat(stringJSON, "]");
+
+    stringJSON = realloc(stringJSON, sizeof(char) * (strlen(stringJSON) + 1));
+
+    return stringJSON;
+}
+
+
+char *otherDataElemToJSON(GPXData *otherData) {
+    char *stringJSON = calloc(10000, sizeof(char));
+
+    char name[200] = {'\0'};
+    char value[200] = {'\0'};
+
+    //finding name
+    if (otherData->name == NULL || strcmp(otherData->name, "") == 0) strcpy(name, "None");
+    else strcpy(name, otherData->name);
+    //finding value
+    if (otherData->value == NULL || strcmp(otherData->value, "") == 0) strcpy(value, "None");
+    else strcpy(value, otherData->value);
+    trimLeadingWhiteSpace(value);
+
+    //{"name":"otherData_name",
+    sprintf(stringJSON, "{\"name\":\"%s\",", name);
+    //"value":"otherData_value"}
+    strcat(stringJSON, "\"value\":");
+    strcat(stringJSON, "\"");
+    strcat(stringJSON, value);
+    strcat(stringJSON, "\"");
+    strcat(stringJSON, "}");
+
+    stringJSON = realloc(stringJSON, sizeof(char) * (strlen(stringJSON) + 1));
+
+    return stringJSON;
+}
+
+
+void trimLeadingWhiteSpace(char string[200]) {
+    int  i,j;
+ 
+	for(i = 0; string[i] == ' '|| string[i] == '\t' || string[i] == '\n'; i++);
+
+    for (j = 0; string[i]; i++) {
+        string[j++] = string[i];
+    }
+
+    string[j] = '\0';
+    for (i = 0; string[i] != '\0'; i++) {
+        if (string[i] != ' ' && string[i] != '\t' && string[i] != '\n') j = i;
+	}
+
+    string[j + 1] = '\0';
+}
+
+
+/***A2 functions***/
+
+
+GPXdoc* createValidGPXdoc(char* filename, char* gpxSchemaFile) {
     xmlDoc* file = NULL;
     xmlNode* rootElement = NULL;
 
@@ -35,11 +456,11 @@ GPXdoc* createValidGPXdoc(char* fileName, char* gpxSchemaFile) {
 
     //error-checking for invalid arguments
     if (gpxSchemaFile == NULL || strcmp(gpxSchemaFile, "") == 0) return NULL;
-    if (fileName == NULL || strcmp(fileName, "") == 0) return NULL;
-    if (strstr(fileName, ".gpx") == NULL) return NULL; //check for .gpx substring in filename
+    if (filename == NULL || strcmp(filename, "") == 0) return NULL;
+    if (strstr(filename, ".gpx") == NULL) return NULL; //check for .gpx substring in filename
 
     //attempt to validate XML file before creating GPXdoc
-    file = xmlReadFile(fileName, NULL, 0);
+    file = xmlReadFile(filename, NULL, 0);
     if (file == NULL) return NULL; //not a well-formed XML
 
     if (!validateXML(file, gpxSchemaFile)) { //validate XML file against GPX schema
@@ -94,21 +515,21 @@ bool followsSpecifications(GPXdoc *gpxDoc) {
     if (gpxDoc->routes == NULL|| gpxDoc->tracks == NULL || gpxDoc->waypoints == NULL) return false;
 
     //validate against constraints for GPXdoc lists
+    if (!validateWptGPXDoc(gpxDoc)) return false; //waypoints list
     if (!validateRteGPXDoc(gpxDoc)) return false; //routes list
     if (!validateTrkGPXDoc(gpxDoc)) return false; //tracks list
-    if (!validateWptGPXDoc(gpxDoc)) return false; //waypoints list
 
     return true;
 }
 
 
-bool writeGPXdoc(GPXdoc* doc, char* fileName) {
-    if (doc == NULL || fileName == NULL || strcmp(fileName, "") == 0) return false;
+bool writeGPXdoc(GPXdoc* doc, char* filename) {
+    if (doc == NULL || filename == NULL || strcmp(filename, "") == 0) return false;
 
     int status;
 
     xmlDoc* xmlTree = convertToXMLDoc(doc);
-    status = xmlSaveFormatFileEnc(fileName, xmlTree, "UTF-8", 1);
+    status = xmlSaveFormatFileEnc(filename, xmlTree, "UTF-8", 1);
     if (status < 0) return false; //could not save to XML file
 
     xmlFreeDoc(xmlTree);
@@ -144,7 +565,6 @@ bool validateXML(xmlDoc* file, char* gpxSchemaFile) {
     xmlSchemaFreeValidCtxt(ctxt2);
     if (schema != NULL) xmlSchemaFree(schema);
     xmlSchemaCleanupTypes();
-//    xmlCleanupParser();
     xmlMemoryDump();
 
     return true;
@@ -409,7 +829,7 @@ float getRouteLen(const Route *rte) {
     
     Waypoint* rtept1, *rtept2;
     double lat1, lat2, lon1, lon2;
-    float d;
+    float d = 0;
 
     ListIterator iter = createIterator(rte->waypoints);
     rtept1 = getFromFront(rte->waypoints);
@@ -431,7 +851,7 @@ float getTrackLen(const Track* trk) {
 
     Waypoint* wpt1, *wpt2, *segStart;
     double lat1, lat2, lon1, lon2;
-    float d;
+    float d = 0;
     TrackSegment *trkseg;
     int numSegments = 0;
 
@@ -526,11 +946,13 @@ bool isLoopRoute(const Route* rte, float delta) {
     rtept2 = getFromBack(rte->waypoints);
 
     //calculate distance between first and last rtepts and compare to delta
-    lat1 = rtept1->latitude;
-    lon1 = rtept1->longitude;
-    lat2 = rtept2->latitude;
-    lon2 = rtept2->longitude;
-    d = calcDistance(lat1, lon1, lat2, lon2);
+    if (rtept1 != NULL && rtept2 != NULL) { //routes may not have rtepts (waypoints list may be empty)
+        lat1 = rtept1->latitude;
+        lon1 = rtept1->longitude;
+        lat2 = rtept2->latitude;
+        lon2 = rtept2->longitude;
+        d = calcDistance(lat1, lon1, lat2, lon2);
+    }
 
     //check Loop Route condition (satisfied if numRtepts >=4 && d < delta)
     if (numRtepts < 4 || d >= delta) return false;
@@ -563,16 +985,16 @@ bool isLoopTrack(const Track *trk, float delta) {
     }
 
     //calculate distance between first and last trkpts and compare to delta
-    lat1 = trkpt1->latitude;
-    lon1 = trkpt1->longitude;
-    lat2 = trkpt2->latitude;
-    lon2 = trkpt2->longitude;
-    d = calcDistance(lat1, lon1, lat2, lon2);
+    if (trkpt1 != NULL && trkpt2 != NULL) { //tracks may not have trkpts (waypoints list of trksegs may be empty)
+        lat1 = trkpt1->latitude;
+        lon1 = trkpt1->longitude;
+        lat2 = trkpt2->latitude;
+        lon2 = trkpt2->longitude;
+        d = calcDistance(lat1, lon1, lat2, lon2);
+    }
 
     //check Loop Track condition (satisfied if numTrkpts >=4 && d < delta)
     if (numTrkpts < 4 || d >= delta) return false;
-
-//    printf("\n\nNUM TRACK POINTS IS %d and DISTANCE IS %f\n\n", numTrkpts, d);
 
     return true;
 }
@@ -641,13 +1063,15 @@ List* getTracksBetween(const GPXdoc* doc, float sourceLat, float sourceLong, flo
 }
 
 
-/***A2 incomplete functions***/
-
-
 char* trackToJSON(const Track *trk) {
-    if (trk == NULL) return "{}";
+    char *stringJSON = calloc(10000, sizeof(char));
 
-    char *stringJSON = calloc(1000, sizeof(char));
+    if (trk == NULL) {
+        strcpy(stringJSON, "{}");
+        stringJSON = realloc(stringJSON, sizeof(char) * (strlen(stringJSON) + 1));
+        return stringJSON; //ptr to statically allocated string e.g. "{}" when returned will be NULL
+    }
+
     char name[200] = {'\0'};
     char len[10] = {'\0'};
     char isLoop[6] = "true"; //"true" or "false"
@@ -678,9 +1102,14 @@ char* trackToJSON(const Track *trk) {
 
 
 char* routeToJSON(const Route *rte) {
-    if (rte == NULL) return "{}";
+    char *stringJSON = calloc(10000, sizeof(char));
 
-    char *stringJSON = calloc(1000, sizeof(char));
+    if (rte == NULL) {
+        strcpy(stringJSON, "{}");
+        stringJSON = realloc(stringJSON, sizeof(char) * (strlen(stringJSON) + 1));
+        return stringJSON; //ptr to statically allocated string e.g. "{}" when returned will be NULL
+    }
+
     char name[200] = {'\0'};
     char numPoints[10] = {'\0'};
     char len[10] = {'\0'};
@@ -718,9 +1147,14 @@ char* routeToJSON(const Route *rte) {
 
 
 char *routeListToJSON(const List *list){
-    if (list == NULL) return "[]";
-
     char *stringJSON = calloc(10000, sizeof(char));
+
+    if (list == NULL) {
+        strcpy(stringJSON, "[]");
+        stringJSON = realloc(stringJSON, sizeof(char) * (strlen(stringJSON) + 1));
+        return stringJSON; //ptr to statically allocated string e.g. "[]" when returned will be NULL
+    }
+
     char *rteBuffer;
     Route *rte;
     int i = 0;
@@ -744,15 +1178,19 @@ char *routeListToJSON(const List *list){
 
 
 char* trackListToJSON(const List *list) {
-    if (list == NULL) return "[]";
-
     char *stringJSON = calloc(10000, sizeof(char));
+
+    if (list == NULL) {
+        strcpy(stringJSON, "[]");
+        stringJSON = realloc(stringJSON, sizeof(char) * (strlen(stringJSON) + 1));
+        return stringJSON; //ptr to statically allocated string e.g. "[]" when returned will be NULL
+    }
+
     char *trkBuffer;
     Track *trk;
     int i = 0;
 
     sprintf(stringJSON, "[");
-
     ListIterator iter = createIterator((List*)list);
     while ((trk = nextElement(&iter)) != NULL) {
         if (++i >= 2) strcat(stringJSON, ","); //comma shouldn't follow last JSON string
@@ -760,7 +1198,6 @@ char* trackListToJSON(const List *list) {
         strcat(stringJSON, trkBuffer);
         free(trkBuffer);
     }
-
     strcat(stringJSON, "]");
 
     stringJSON = realloc(stringJSON, sizeof(char) * (strlen(stringJSON) + 1));
@@ -770,9 +1207,13 @@ char* trackListToJSON(const List *list) {
 
 
 char* GPXtoJSON(const GPXdoc* gpx) {
-    if (gpx == NULL) return "{}";
-
     char *stringJSON = calloc(10000, sizeof(char));
+
+    if (gpx == NULL) {
+        strcpy(stringJSON, "{}");
+        stringJSON = realloc(stringJSON, sizeof(char) * (strlen(stringJSON) + 1));
+        return stringJSON; //ptr to statically allocated string e.g. "{}" when returned will be NULL
+    }
 
     //{"version":ver,"creator":"crVal","numWaypoints":numW,"numRoutes":numR,"numTracks":numT}
     sprintf(stringJSON, "{\"version\":%.1f,\"creator\":\"%s\",\"numWaypoints\":%d,\"numRoutes\":%d,\"numTracks\":%d}",
@@ -788,40 +1229,95 @@ char* GPXtoJSON(const GPXdoc* gpx) {
 
 
 void addWaypoint(Route *rt, Waypoint *wpt) {
-    return;
+    if (rt == NULL || wpt == NULL) return;
+
+    insertBack(rt->waypoints, wpt);
 }
 
-void addRoute(GPXdoc *doc, Route *rte) {
-    return;
+
+void addRoute(GPXdoc *doc, Route *rt) {
+    if (doc == NULL || rt == NULL) return;
+
+    insertBack(doc->routes, rt);
 }
+
 
 GPXdoc* JSONtoGPX(const char* gpxString) {
-    return NULL;
+    if (gpxString == NULL) return NULL;
+
+    GPXdoc *doc = malloc(sizeof(GPXdoc));
+    double version;
+    char creator[100] = {'\0'};
+
+    //{"version":ver, "creator":"creatorValue"}
+    sscanf(gpxString, "\"version\":%lf,\"creator\":\"%s\"}", &version, creator);
+
+    initializeReqLists(doc);
+    doc->creator = calloc((strlen(creator) + 1), sizeof(char));
+
+    //store info in GPXdoc
+    strcpy(doc->namespace, "http://www.topografix.com/GPX/1/1"); //will remain constant
+    doc->version = version;
+    strcpy(doc->creator, creator);
+
+    return doc;
 }
+
 
 Waypoint* JSONtoWaypoint(const char* gpxString) {
-    return NULL;
+    if (gpxString == NULL) return NULL;
+    
+    Waypoint *wpt = malloc(sizeof(Waypoint));
+    double lon, lat;
+
+    //{lat":latVal,"lon":lonVal}
+    sscanf(gpxString, "\"lat\":%lf,\"lon\":%lf}", &lat, &lon);
+
+    wpt->otherData = initializeList(&gpxDataToString, &deleteGpxData, &compareGpxData);
+    wpt->name = calloc(300, sizeof(char));
+
+    //store info parsed from JSON string into GPXdoc
+    wpt->latitude = lat;
+    wpt->longitude = lon;
+
+    return wpt;
 }
 
+
 Route *JSONtoRoute(const char *gpxString) {
-    return NULL;
+    if (gpxString == NULL) return NULL;
+    
+    Route *rte = malloc(sizeof(Route));
+    char name[300] = {'\0'};
+
+    rte->waypoints = initializeList(&waypointToString, &deleteWaypoint, &compareWaypoints);
+    rte->otherData = initializeList(&gpxDataToString, &deleteGpxData, &compareGpxData);
+    rte->name = calloc(300, sizeof(char));
+
+    //{"name":"nameVal"}
+    sscanf(gpxString, "\"name\":\"%s\"}", name);
+
+    //store info in GPXdoc
+    strcpy(rte->name, name);
+
+    return rte;
 }
 
 
 /**********A1 functions**********/
 
 
-GPXdoc* createGPXdoc(char* fileName) {
+GPXdoc* createGPXdoc(char* filename) {
     LIBXML_TEST_VERSION
 
     //error-checking for invalid filename
-    if (fileName == NULL || strcmp(fileName, "") == 0) return NULL;
+    if (filename == NULL || strcmp(filename, "") == 0) return NULL;
 
     xmlDoc* file = NULL;
     xmlNode* rootElement = NULL;
 
     //attempt to parse XML file
-    file = xmlReadFile(fileName, NULL, 0);
+    file = xmlReadFile(filename, NULL, 0);
     if (file == NULL) return NULL; //return if not a well-formed XML
     rootElement = xmlDocGetRootElement(file); //get the root element node 'gpx'
 
@@ -1640,11 +2136,8 @@ int getNumWaypoints(const GPXdoc* doc) {
     if (doc == NULL) return 0;
 
     numWaypoints = getLength(doc->waypoints);
-    if (numWaypoints == -1) {
-        return 0;
-    } else {
-        return numWaypoints;
-    }
+    if (numWaypoints == -1) return 0;
+    else return numWaypoints;
 }
 
 

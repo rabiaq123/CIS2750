@@ -8,3 +8,8 @@
 # Other generated files from IDE #
 ######################
 ./vscode
+
+# Files Professor said not to include #
+######################
+node_modules
+*.so

@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>GPS Data Viewer</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="CHANGE ME">
+    <meta name="keywords" content="CHANGE ME">
+    <meta name="author" content="CHANGE ME">
+    <!-- Load jquery, bootstrap, W3.CSS -->
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" type="text/css" href="/style.css">
+    <!-- Custom CSS End -->
+    <link rel="shortcut icon" href="#">
+</head>
+<body>
+    <h1 class="w3-panel">GPS Data Viewer</h1>
+    
+    <!-----------------
+        FILE LOG PANEL
+    ------------------>
+    <div class="w3-panel" id="FileLogPanel">
+        <hr>
+        <h2>File Log Panel</h2>
+        <br>
+
+        <!--table should be scrollable-->
+        <div class="table-wrapper-scroll-y FileLogTableScrollBar" id="FileLogTableDiv">
+            <table id="FileLogTable">
+                <!--table headers-->
+                <thead>
+                    <tr>
+                        <th>File name (click to download)</th>
+                        <th>Version</th>
+                        <th>Creator</th>
+                        <th># of Wpts</th>
+                        <th># of Rtes</th>
+                        <th># of Trks</th>
+                    </tr>
+                </thead>
+                <!--Every row in tbody contains one file name and its basic info.
+                Table should also display files created from scratch by the user.-->
+                <tbody></tbody>
+            </table>
+        </div>
+        <br>
+
+        <!--upload file form-->
+        <form ref='uploadForm' id='GPXUploadForm' action='/upload' method='post' encType="multipart/form-data">
+            <div class="form-group">
+                <input type="file" id="GPXUpload" name="uploadFile" class="btn btn-secondary" accept=".gpx">
+                <input type='submit' id="GPXUploadButton" value='Upload' class="btn btn-secondary">
+            </div>
+        </form>
+    </div>
+
+    <!-----------------
+        GPX VIEW PANEL
+    ------------------>
+    <div class="w3-panel" id = "GPXViewPanel">
+        <hr>
+
+        <!--dropdown to select GPX file-->
+        <label for="GPXViewDropdown">Select GPX file: </label>
+        <select id="GPXViewDropdown" onchange="displayGPXFileInfo()">
+            <option value="" selected> </option> <!--file should not be selected by default-->
+        </select>
+
+        <!--view selected file's contents-->
+        <h2>GPX View Panel</h2>
+        <br>
+        <!--table should be scrollable-->
+        <div class="table-wrapper-scroll-y GPXViewTableScrollBar" id="GPXViewTableDiv">
+            <table id="GPXViewTable">
+                <!--table headers-->
+                <thead>
+                    <tr>
+                        <th>Component</th> 
+                        <th>Name</th>
+                        <th># of Points</th>
+                        <th>Length</th>
+                        <th>Loop</th>
+                        <th colspan="2">Rename Component</th>
+                        <th>View Other Data</th> <!--have a button in each row that creates alert with otherData string-->
+                    </tr>
+                </thead>
+                <!--Every row in tbody contains one component of the selected file, and its basic info-->
+                <tbody></tbody>
+            </table>
+        </div>
+        <br>
+        <!-- <button id="GPXViewAddRowButton" onclick="AddDummyRow()">Add Dummy Row</button> -->
+    </div>
+
+    <!-----------------
+        CREATE GPX
+    ------------------>
+    <div class="w3-panel" id="CreateGPXFilePanel">
+        <hr>
+        <h2>Create GPX</h2>
+        <br>
+
+        <form id="createGPXForm">
+            <div class="form-row">
+                <div class="col">
+                    <input type="text" id="entryBoxGPXName" class="form-control" placeholder="File Name (*.gpx)" required>
+                </div>
+                <div class="col">
+                    <input type="text" id="entryBoxGPXCreator" class="form-control" placeholder="GPX Creator" required>
+                </div>
+            </div>
+            <br>
+            <div class="form-row">
+                <div class="col" id="submitGPXButton">
+                    <input type='submit' class="btn btn-secondary" id="createGPXButton" value="Create GPX">
+                </div>
+            </div>
+        </form>
+
+        <br>
+    </div>
+
+    <!-----------------
+        ADD ROUTE - STUB
+    ------------------>
+
+    <div class="w3-panel" id="AddRoutePanel">
+        <hr>
+        <h2>Add Route</h2>
+        <p>Add a route to an existing GPX file, with new waypoints. 
+            The latitude may range from -90 to 90, and longitude may range from -180 to 180.
+        </p>
+        <br>
+
+        <!--dropdown to select GPX file-->
+        <label for="AddRouteDropdown">Select GPX file: </label>
+        <select id="AddRouteDropdown">
+            <option value="" selected> </option> <!--file should not be selected by default-->
+        </select>
+        <br>
+        <br>
+
+        <!--allow user to enter 2 waypoints' information-->
+        <form id="addRouteForm">
+            <div class="form-row">
+                <div class="col">
+                    <input type="text" class="form-control" id="entryBoxRtept1Lat" placeholder="Route point 1 latitude..." required>
+                </div>
+                <div class="col">
+                    <input type="text" class="form-control" id="entryBoxRtept1Lon" placeholder="Route point 1 longitude..." required>
+                </div>
+            </div>
+            <br>
+            <div class="form-row">
+                <div class="col">
+                    <input type="text" class="form-control" id="entryBoxRtept2Lat" placeholder="Route point 2 latitude..." required>
+                </div>
+                <div class="col">
+                    <input type="text" class="form-control" id="entryBoxRtept2Lon" placeholder="Route point 2 longitude..." required>
+                </div>
+            </div>
+            <br>
+            <div class="form-row">
+                <div class="col">
+                    <input type='submit' class="btn btn-secondary" id="addRouteButton" value="Add Route">
+                </div>
+            </div>
+        </form>
+
+        <br>
+    </div>
+
+    <!-----------------
+        FIND PATH BTWN - STUB
+    ------------------>
+    
+    <div class="w3-panel" id="FindPathBtwnPanel">
+        <hr>
+        <h2>Find Path Between</h2>
+        <br>
+    
+        <table id="FindPathBtwnTable">
+            <!--table headers-->
+            <thead>
+                <tr>
+                    <th>Point 1</th>
+                    <th>Point 2</th>
+                </tr>
+            </thead>
+            <tbody>
+                <form ref='findPathBtwnForm' id='findPathBtwnForm'>
+                    <div class="form-group">
+                        <tr>
+                            <td>
+                                <input type="text" class="form-control" id="entryBoxPoint1Lat" placeholder="Enter latitude..." required>
+                            </td>
+                            <td>
+                                <input type="text" class="form-control" id="entryBoxPoint2Lat" placeholder="Enter latitude..." required>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <input type="text" class="form-control" id="entryBoxPoint1Lon" placeholder="Enter longitude..." required>
+                            </td>
+                            <td>
+                                <input type="text" class="form-control" id="entryBoxPoint2Lon" placeholder="Enter longitude..." required>
+                            </td>
+                        </tr>
+                    </div>
+                    <tr>
+                        <td colspan="2">
+                                <input type="text" class="form-control" id="entryBoxDeltaVal" placeholder="Enter delta..." required>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2">
+                            <div class="form-group">
+                                <input type='submit' class="btn btn-secondary" id="FindPathBtwnButton" value="Find Path">
+                            </div>
+                        </td>
+                    </tr>
+                </form>
+            </tbody>
+        </table>
+
+        <br>
+    </div>
+
+    <!-- Leave me at the bottom of body -->
+    <script src="/index.js"></script>
+</body>
+</html>

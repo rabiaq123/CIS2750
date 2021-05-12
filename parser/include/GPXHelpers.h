@@ -12,6 +12,142 @@
 #include <libxml/xmlschemastypes.h>
 #include "LinkedListAPI.h"
 
+/**********A3 helper functions**********/
+
+/**
+ * HELPER warpper function to add new Route with (two - my choice of amount) waypoints to pre-existing GPX file
+ * @param filenam naem of file to add route in
+ * @param wpt1Lat latitude of waypoint 1
+ * @param wpt1Lon longitude of waypoint 1
+ * @param wpt2Lat latitude of waypoint 2
+ * @param wpt2Lon longitude of waypoint 2
+ */
+bool addRouteToGPXWrapper(char *filename, double wpt1Lat, double wpt1Lon, double wp2Lat, double wpt2Lon);
+
+/**
+ * HELPER populate newly created empty GPX doc with a route consisting of (two - my choice of amount) waypoints
+ * @param doc GPXdoc to put new routes in
+ * @param wpt1Lat latitude of waypoint 1
+ * @param wpt1Lon longitude of waypoint 1
+ * @param wpt2Lat latitude of waypoint 2
+ * @param wpt2Lon longitude of waypoint 2
+ */
+void addNewRteToGPX(GPXdoc *doc, double wpt1Lat, double wpt1Lon, double wp2Lat, double wpt2Lon);
+
+/**
+ * HELPER create new GPX file from scratch, without reading in a GPX file
+ * @param filename name of new GPX file, entered by user
+ * @param creator creator user enters
+ * @param creatorLen length of user input in 'creator' textbox
+ * @return boolean representing whether new GPX could be created
+ */
+bool createNewGPX(char *filename, char *creator, int creatorLen);
+
+/**
+ * HELPER update attempt to update track component name
+ * @param doc GPXdoc struct to be updated and later re-written into current file
+ * @param newName new name of component
+ * @param index index of component to be updated in array of tracks in file
+ * @return updated GPXdoc struct to be written into current file
+ */
+GPXdoc *updateTrackName(GPXdoc *doc, char *newName, int index);
+
+/**
+ * HELPER update attempt to update route component name
+ * @param doc GPXdoc struct to be updated and later re-written into current file
+ * @param newName new name of component
+ * @param index index of component to be updated in array of routes in file
+ * @return updated GPXdoc struct to be written into current file
+ */
+GPXdoc *updateRouteName(GPXdoc *doc, char *newName, int index);
+
+/**
+ * HELPER wrapper function to update component name chosen in GPX View table textbox by user
+ * @param fileDir file location in which change needs to be made
+ * @param compFlag component being changed is a Route if == 1 and Track if == 2
+ * @param index index of component to be updated in array of routes/tracks in file
+ * @param newName new name of component
+ * @return boolean representing whether component name was successfully updated
+ */
+bool updateComponentName(char *fileDir, int compFlag, int index, char *newName);
+
+/**
+ * HELPER trim leading and trailing whitespace in string
+ * @param string string to be modified to remove trailing and leading whitespace
+ */
+void trimLeadingWhiteSpace(char string[]);
+
+/**
+ * HELPER get JSON string of one otherData node in otherData list of route/track
+ * @param otherData otherData node to be parsed into JSON string
+ * @return JSON string representing given otherData elem
+ */
+char *otherDataElemToJSON(GPXData *otherData);
+
+/**
+ * HELPER get JSON string of all otherData in route/track
+ * @param rteOtherDataList pointer to otherData list of route
+ * @param trkOtherDataList pointer to otherData list of track
+ * @return JSON string representing all otherData nodes in otherData list of track/route
+ */
+char *otherDataListToJSON(List *rteOtherDataList, List *trkOtherDataList);
+
+/**
+ * HELPER get JSON string of one track including the number of points (rtepts) for the route and its otherData
+ * @param rte route to be parsed into JSON string
+ * @return JSON string representing given route
+ */
+char* detailedRouteToJSON(const Route *rte);
+
+/**
+ * HELPER get JSON string of all routes including the number of points (rtepts) for each route and its otherData
+ * @param list pointer to a List struct
+ * @return JSON string representing all routes in file
+ */
+char *detailedRouteListToJSON(const List *list);
+
+/**
+ * HELPER get number of trkpts in track (from all track segments)
+ * @param trk track to find num trkpts for
+ * @return num trkpts in track
+ */
+int getNumTrkptsInTrack(const Track *trk);
+
+/**
+ * HELPER get JSON string of one track including the number of points (trkpts) for the track and its otherData
+ * @param trk track to be parsed into JSON string
+ * @return JSON string representing given track
+ */
+char* detailedTrackToJSON(const Track *trk);
+
+/**
+ * HELPER get JSON string of all tracks including the number of points (trkpts) for each track
+ * @param list pointer to a List struct
+ * @return JSON string representing all tracks in file
+ */
+char *detailedTrackListToJSON(const List *list);
+
+/**
+ * HELPER wrapper function to get components of each track in file, if file is a valid GPX
+ * @param fileName name of file to create GPXdoc from
+ * @return JSON array of objects, each object representing one track and its components
+ */
+char *getAllTrackComponentsJSON(char *fileName);
+
+/**
+ * HELPER wrapper function to get components of each route in file, if file is a valid GPX
+ * @param fileName name of file to create GPXdoc from
+ * @return JSON array of objects, each object representing one route and its components
+ */
+char *getAllRoutesComponentsJSON(char *fileName);
+
+/**
+ * HELPER convert file to GPX object and return a JSON string representation of it
+ * @param filename
+ * @return JSON string representation of file
+ */
+char *GPXFileToJSON(char *fileName);
+
 /**********A2 helper functions**********/
 
 /**
@@ -233,4 +369,3 @@ bool storeTrkOtherData(xmlNode* xmlTrkChild, Track* newTrk);
  * @return boolean value representing whether TrackSeg was parsed correctly - halt traversal process if false
  */
 bool storeTrkSeg(xmlNode* xmlTrkChild, Track* newTrk);
-
